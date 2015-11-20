@@ -1,0 +1,13 @@
+{
+    "ignore": [
+        "*.git*",
+        "*.jpg"
+    ],
+    "tags": [
+        "build",
+        "fun"
+    ],
+    "title": "FSpectate",
+    "type": "tool",
+    "default_changelog": "All changes can be found on https://github.com/FPtje/FSpectate"
+}
