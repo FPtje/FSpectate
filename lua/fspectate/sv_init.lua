@@ -123,7 +123,7 @@ local function playerSay(talker, message)
         if ply == talker or not ply.FSpectating then continue end
 
         -- the person is saying it close to where you are roaming
-        if ply.FSpectatePos and ply:GetShootPos():Distance(ply.FSpectatePos) <= 400 and
+        if ply.FSpectatePos and talker:GetShootPos():Distance(ply.FSpectatePos) <= 400 and
             ply:GetShootPos():Distance(talker:GetShootPos()) > 250 then -- Make sure you don't get it twice
 
             DarkRP.talkToPerson(ply, team.GetColor(talker:Team()), talker:Nick(), Color(255, 255, 255, 255), message, talker)
