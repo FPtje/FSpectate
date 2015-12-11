@@ -11,6 +11,13 @@ startHooks
 FAdmin tab buttons
 ---------------------------------------------------------------------------*/
 hook.Add("Initialize", "FSpectate", function()
+    surface.CreateFont("UiBold", {
+        size = 16,
+        weight = 800,
+        antialias = true,
+        shadow = false,
+        font = "Default"})
+
     if not FAdmin then return end
     FAdmin.StartHooks["zzSpectate"] = function()
         FAdmin.Commands.AddCommand("Spectate", nil, "<Player>")
@@ -32,13 +39,6 @@ hook.Add("Initialize", "FSpectate", function()
             RunConsoleCommand("FSpectate", ply:UserID())
         end)
     end
-
-    surface.CreateFont("UiBold", {
-        size = 16,
-        weight = 800,
-        antialias = true,
-        shadow = false,
-        font = "Default"})
 end)
 
 /*---------------------------------------------------------------------------
