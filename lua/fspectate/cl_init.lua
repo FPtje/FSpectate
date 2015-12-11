@@ -32,6 +32,13 @@ hook.Add("Initialize", "FSpectate", function()
             RunConsoleCommand("FSpectate", ply:UserID())
         end)
     end
+
+    surface.CreateFont("UiBold", {
+        size = 16,
+        weight = 800,
+        antialias = true,
+        shadow = false,
+        font = "Default"})
 end)
 
 /*---------------------------------------------------------------------------
