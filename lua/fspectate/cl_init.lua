@@ -5,6 +5,7 @@ local thirdperson = true
 local isRoaming = false
 local roamPos -- the position when roaming free
 local roamVelocity = Vector(0)
+local thirdPersonDistance = 100
 
 /*---------------------------------------------------------------------------
 startHooks
@@ -47,7 +48,7 @@ Get the thirdperson position
 local function getThirdPersonPos(ent)
     local aimvector = LocalPlayer():GetAimVector()
     local startPos = ent:IsPlayer() and ent:GetShootPos() or ent:LocalToWorld(ent:OBBCenter())
-    local endpos = startPos - aimvector * 100
+    local endpos = startPos - aimvector * thirdPersonDistance
 
     local tracer = {
         start = startPos,
@@ -164,6 +165,8 @@ Change binds to perform spectate specific tasks
 -- Manual keysDown table, so I can return true in plyBindPress and still detect key presses
 local keysDown = {}
 local function specBinds(ply, bind, pressed)
+    local key = input.LookupBinding(bind)
+
     if bind == "+jump" then
         stopSpectating()
         return true
@@ -188,12 +191,14 @@ local function specBinds(ply, bind, pressed)
 
         return true
     elseif isRoaming and not LocalPlayer():KeyDown(IN_USE) then
-        local key = string.lower(string.match(bind, "+([a-z A-Z 0-9]+)") or "")
-        if not key or key == "use" or key == "showscores" or string.find(bind, "messagemode") then return end
+        local keybind = string.lower(string.match(bind, "+([a-z A-Z 0-9]+)") or "")
+        if not keybind or keybind == "use" or keybind == "showscores" or string.find(bind, "messagemode") then return end
 
-        keysDown[key:upper()] = pressed
+        keysDown[keybind:upper()] = pressed
 
         return true
+    elseif not isRoaming and thirdperson and (key == "MWHEELDOWN" or key == "MWHEELUP") then
+        thirdPersonDistance = thirdPersonDistance + 10 * (key == "MWHEELDOWN" and 1 or -1)
     end
     -- Do not return otherwise, spectating admins should be able to move to avoid getting detected
 end
