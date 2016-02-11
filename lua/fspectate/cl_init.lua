@@ -44,9 +44,9 @@ end)
 /*---------------------------------------------------------------------------
 Get the thirdperson position
 ---------------------------------------------------------------------------*/
-local function getThirdPersonPos(ply)
+local function getThirdPersonPos(ent)
     local aimvector = LocalPlayer():GetAimVector()
-    local startPos = ply:GetShootPos()
+    local startPos = ent:IsPlayer() and ent:GetShootPos() or ent:LocalToWorld(ent:OBBCenter())
     local endpos = startPos - aimvector * 100
 
     local tracer = {
@@ -70,8 +70,8 @@ local function getCalcView()
             view.origin = getThirdPersonPos(specEnt)
             view.angles = LocalPlayer():EyeAngles()
         else
-            view.origin = specEnt:GetShootPos()
-            view.angles = specEnt:EyeAngles()
+            view.origin = specEnt:IsPlayer() and specEnt:GetShootPos() or specEnt:LocalToWorld(specEnt:OBBCenter())
+            view.angles = specEnt:IsPlayer() and specEnt:EyeAngles() or specEnt:GetAngles()
         end
 
         roamPos = view.origin
@@ -109,11 +109,16 @@ end
 /*---------------------------------------------------------------------------
 Find the right player to spectate
 ---------------------------------------------------------------------------*/
-local function findNearestPlayer()
+local function findNearestObject()
     local aimvec = LocalPlayer():GetAimVector()
 
-    local foundPly, foundDot = nil, 0
     local fromPos = isRoaming and roamPos or specEnt:EyePos()
+
+    local lookingAt = util.QuickTrace(fromPos, aimvec * 5000, LocalPlayer())
+
+    if IsValid(lookingAt.Entity) then return lookingAt.Entity end
+
+    local foundPly, foundDot = nil, 0
 
     for _, ply in pairs(player.GetAll()) do
         if ply == LocalPlayer() then continue end
@@ -140,14 +145,16 @@ end
 Spectate the person you're looking at while you're roaming
 ---------------------------------------------------------------------------*/
 local function spectateLookingAt()
-    local foundPly = findNearestPlayer()
+    local obj = findNearestObject()
 
-    if not IsValid(foundPly) then return end
+    if not IsValid(obj) then return end
 
     isRoaming = false
-    specEnt = foundPly
+    specEnt = obj
 
-    RunConsoleCommand("FSpectate", foundPly:UserID())
+    net.Start("FSpectateTarget")
+        net.WriteEntity(obj)
+    net.SendToServer()
 end
 
 /*---------------------------------------------------------------------------
@@ -314,7 +321,7 @@ local function drawHelp()
     end
 
 
-    local target = findNearestPlayer()
+    local target = findNearestObject()
     local pls = player.GetAll()
     for i = 1, #pls do
         local ply = pls[i]
@@ -329,10 +336,6 @@ local function drawHelp()
         draw.WordBox(2, x, y - 66, ply:Nick(), "UiBold", uiBackground, uiForeground)
         draw.WordBox(2, x, y - 46, "Health: " .. ply:Health(), "UiBold", uiBackground, uiForeground)
         draw.WordBox(2, x, y - 26, ply:GetUserGroup(), "UiBold", uiBackground, uiForeground)
-
-        if ply == target then
-            draw.WordBox(2, x, y - 86, "Left click to spectate!", "UiBold", uiBackground, uiForeground)
-        end
     end
 
     if not isRoaming then return end
@@ -346,6 +349,7 @@ local function drawHelp()
     local bottomLeft = (center - rightUp):ToScreen()
 
     draw.RoundedBox(12, bottomLeft.x, bottomLeft.y, math.max(20, topRight.x - bottomLeft.x), topRight.y - bottomLeft.y, red)
+    draw.WordBox(2, bottomLeft.x, bottomLeft.y + 12, "Left click to spectate!", "UiBold", uiBackground, uiForeground)
 end
 
 /*---------------------------------------------------------------------------
@@ -371,7 +375,7 @@ Spectate a player
 local function startSpectate(um)
     isRoaming = net.ReadBool()
     specEnt = net.ReadEntity()
-    specEnt = IsValid(specEnt) and specEnt:IsPlayer() and specEnt or nil
+    specEnt = IsValid(specEnt) and specEnt or nil
 
     if isRoaming then
         startFreeRoam()
