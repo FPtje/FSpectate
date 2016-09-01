@@ -13,11 +13,11 @@ local thirdPersonDistance = 100
 Retrieve the current spectated player
 ---------------------------------------------------------------------------*/
 function FSpectate.getSpecEnt()
-	if isSpectating and not isRoaming then
-		return IsValid(specEnt) and specEnt or nil
-	else
-		return nil
-	end
+    if isSpectating and not isRoaming then
+        return IsValid(specEnt) and specEnt or nil
+    else
+        return nil
+    end
 end
 
 /*---------------------------------------------------------------------------
