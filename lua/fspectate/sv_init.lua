@@ -38,6 +38,8 @@ local function startSpectating(ply, target)
 
     local targetText = IsValid(target) and target:IsPlayer() and (target:Nick() .. " (" .. target:SteamID() .. ")") or IsValid(target) and "an entity" or ""
     ply:ChatPrint("You are now spectating " .. targetText)
+
+    hook.Call("FSpectate.playerStartedSpectating", nil, ply, target)
 end
 
 local function Spectate(ply, cmd, args)
