@@ -24,6 +24,9 @@ local function findPlayer(info)
 end
 
 local function startSpectating(ply, target)
+    local canSpectate = hook.Call("FSpectate_canSpectate", nil, ply, target)
+    if canSpectate == false then return end
+
     ply.FSpectatingEnt = target
     ply.FSpectating = true
 
@@ -38,6 +41,7 @@ local function startSpectating(ply, target)
 
     local targetText = IsValid(target) and target:IsPlayer() and (target:Nick() .. " (" .. target:SteamID() .. ")") or IsValid(target) and "an entity" or ""
     ply:ChatPrint("You are now spectating " .. targetText)
+    hook.Call("FSpectate_start", nil, ply, target)
 end
 
 local function Spectate(ply, cmd, args)
@@ -110,6 +114,7 @@ local function endSpectate(ply, cmd, args)
     ply.FSpectatingEnt = nil
     ply.FSpectating = nil
     ply.FSpectatePos = nil
+    hook.Call("FSpectate_stop", nil, ply)
 end
 concommand.Add("FSpectate_StopSpectating", endSpectate)
 
