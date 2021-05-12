@@ -25,7 +25,7 @@ end
 
 local FSpectating = {}
 -- For Lua Refresh
-for k,v in ipairs(player.GetHumans()) do
+for _,v in ipairs(player.GetHumans()) do
     FSpectating[v] = v.FSpectating
 end
 local function startSpectating(ply, target)
