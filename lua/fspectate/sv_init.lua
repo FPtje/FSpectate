@@ -25,12 +25,24 @@ end
 
 local FSpectating = {}
 -- For Lua Refresh
-for _,v in ipairs(player.GetHumans()) do
-    FSpectating[v] = v.FSpectating
+for _, ply in ipairs(player.GetHumans()) do
+    FSpectating[ply] = ply.FSpectating
 end
+
+local function clearInvalidSpectators()
+    for ply, _ in pairs(FSpectating) do
+        if not IsValid(ply) then
+            FSpectating[ply] = nil
+        end
+    end
+end
+
 local function startSpectating(ply, target)
     local canSpectate = hook.Call("FSpectate_canSpectate", nil, ply, target)
     if canSpectate == false then return end
+
+    -- Clear invalid spectators from the FSpectating table to prevent build up.
+    clearInvalidSpectators()
 
     ply.FSpectatingEnt = target
     ply.FSpectating = true
