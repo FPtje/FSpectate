@@ -1,5 +1,5 @@
-util.AddNetworkString( "FSpectate" )
-util.AddNetworkString( "FSpectateTarget" )
+util.AddNetworkString( "fSpectate" )
+util.AddNetworkString( "fSpectateTarget" )
 
 local function findPlayer( info )
     if not info or info == "" then return nil end
@@ -31,7 +31,7 @@ local function clearInvalidSpectators()
 end
 
 local function startSpectating( ply, target )
-    local canSpectate = hook.Call( "FSpectate_canSpectate", nil, ply, target )
+    local canSpectate = hook.Call( "fSpectate_canSpectate", nil, ply, target )
     if canSpectate == false then return end
     -- Clear invalid spectators from the fSpectating table to prevent build up.
     clearInvalidSpectators()
@@ -39,7 +39,7 @@ local function startSpectating( ply, target )
     ply.fSpectating = true
     fSpectating[ply] = true
     ply:ExitVehicle()
-    net.Start( "FSpectate" )
+    net.Start( "fSpectate" )
     net.WriteBool( target == nil )
 
     if IsValid( ply.fSpectatingEnt ) then
@@ -49,11 +49,11 @@ local function startSpectating( ply, target )
     net.Send( ply )
     local targetText = IsValid( target ) and target:IsPlayer() and ( target:Nick() .. " (" .. target:SteamID() .. ")" ) or IsValid( target ) and "an entity" or ""
     ply:ChatPrint( "You are now spectating " .. targetText )
-    hook.Call( "FSpectate_start", nil, ply, target )
+    hook.Call( "fSpectate_start", nil, ply, target )
 end
 
 local function Spectate( ply, _, args )
-    CAMI.PlayerHasAccess( ply, "FSpectate", function( b, _ )
+    CAMI.PlayerHasAccess( ply, "fSpectate", function( b, _ )
         if not b then
             ply:ChatPrint( "No Access!" )
 
@@ -82,7 +82,7 @@ local function autoComplete( _, stringargs )
 
         if string.find( string.lower( nick ), stringargs ) then
             nick = "\"" .. nick .. "\"" -- We put quotes around it in case players have spaces in their names.
-            nick = "FSpectate " .. nick -- We also need to put the cmd before for it to work properly.
+            nick = "fSpectate " .. nick -- We also need to put the cmd before for it to work properly.
             table.insert( tbl, nick )
         end
     end
@@ -90,10 +90,10 @@ local function autoComplete( _, stringargs )
     return tbl
 end
 
-concommand.Add( "FSpectate", Spectate, autoComplete )
+concommand.Add( "fSpectate", Spectate, autoComplete )
 
-net.Receive( "FSpectateTarget", function( _, ply )
-    CAMI.PlayerHasAccess( ply, "FSpectate", function( b, _ )
+net.Receive( "fSpectateTarget", function( _, ply )
+    CAMI.PlayerHasAccess( ply, "fSpectate", function( b, _ )
         if not b then
             ply:ChatPrint( "No Access!" )
 
@@ -105,7 +105,7 @@ net.Receive( "FSpectateTarget", function( _, ply )
 end )
 
 local function TPToPos( ply, _, args )
-    CAMI.PlayerHasAccess( ply, "FSpectateTeleport", function( b, _ )
+    CAMI.PlayerHasAccess( ply, "fSpectateTeleport", function( b, _ )
         if not b then
             ply:ChatPrint( "No Access!" )
 
@@ -136,35 +136,35 @@ local function SpectateVisibility( ply, _ )
         AddOriginToPVS( ply.fSpectatingEnt:IsPlayer() and ply.fSpectatingEnt:GetShootPos() or ply.fSpectatingEnt:GetPos() )
     end
 
-    if ply.FSpectatePos then
-        AddOriginToPVS( ply.FSpectatePos )
+    if ply.fSpectatePos then
+        AddOriginToPVS( ply.fSpectatePos )
     end
 end
 
-hook.Add( "SetupPlayerVisibility", "FSpectate", SpectateVisibility )
+hook.Add( "SetupPlayerVisibility", "fSpectate", SpectateVisibility )
 
 local function setSpectatePos( ply, _, args )
-    CAMI.PlayerHasAccess( ply, "FSpectate", function( b, _ )
+    CAMI.PlayerHasAccess( ply, "fSpectate", function( b, _ )
         if not b then return end
         if not ply.fSpectating or not args[3] then return end
         local x, y, z = tonumber( args[1] or 0 ), tonumber( args[2] or 0 ), tonumber( args[3] or 0 )
-        ply.FSpectatePos = Vector( x, y, z )
+        ply.fSpectatePos = Vector( x, y, z )
         -- A position update request implies that the spectator is not spectating another player (anymore)
         ply.fSpectatingEnt = nil
     end )
 end
 
-concommand.Add( "_FSpectatePosUpdate", setSpectatePos )
+concommand.Add( "_fSpectatePosUpdate", setSpectatePos )
 
 local function endSpectate( ply )
     ply.fSpectatingEnt = nil
     ply.fSpectating = nil
-    ply.FSpectatePos = nil
+    ply.fSpectatePos = nil
     fSpectating[ply] = nil
-    hook.Call( "FSpectate_stop", nil, ply )
+    hook.Call( "fSpectate_stop", nil, ply )
 end
 
-concommand.Add( "FSpectate_StopSpectating", endSpectate )
+concommand.Add( "fSpectate_StopSpectating", endSpectate )
 local vrad = DarkRP and GM.Config.voiceradius
 local voiceDistance = DarkRP and GM.Config.voiceDistance * GM.Config.voiceDistance or 302500 -- Default 550 units
 
@@ -176,7 +176,7 @@ local function playerVoice( listener, talker )
     local fSpectatingEnt = listener.fSpectatingEnt
 
     if not IsValid( fSpectatingEnt ) or not fSpectatingEnt:IsPlayer() then
-        local spectatePos = IsValid( fSpectatingEnt ) and fSpectatingEnt:GetPos() or listener.FSpectatePos
+        local spectatePos = IsValid( fSpectatingEnt ) and fSpectatingEnt:GetPos() or listener.fSpectatePos
         if not vrad or not spectatePos then return end
         -- Return whether the listener is a in distance smaller than 550
 
@@ -191,7 +191,7 @@ local function playerVoice( listener, talker )
     return canHear, surround
 end
 
-hook.Add( "PlayerCanHearPlayersVoice", "FSpectate", playerVoice )
+hook.Add( "PlayerCanHearPlayersVoice", "fSpectate", playerVoice )
 
 local function playerSay( talker, message )
     local split = string.Explode( " ", message )
@@ -212,7 +212,7 @@ local function playerSay( talker, message )
         local shootPos = talker:GetShootPos()
         local fSpectatingEnt = ply.fSpectatingEnt
 
-        if ply:GetShootPos():DistToSqr( shootPos ) > 62500 and ( ply.FSpectatePos and shootPos:DistToSqr( ply.FSpectatePos ) <= 360000 or ( IsValid( fSpectatingEnt ) and fSpectatingEnt:IsPlayer() and shootPos:DistToSqr( fSpectatingEnt:GetShootPos() ) <= 90000 ) or ( IsValid( fSpectatingEnt ) and not fSpectatingEnt:IsPlayer() and talker:GetPos():DistToSqr( fSpectatingEnt:GetPos() ) <= 90000 ) ) then
+        if ply:GetShootPos():DistToSqr( shootPos ) > 62500 and ( ply.fSpectatePos and shootPos:DistToSqr( ply.fSpectatePos ) <= 360000 or ( IsValid( fSpectatingEnt ) and fSpectatingEnt:IsPlayer() and shootPos:DistToSqr( fSpectatingEnt:GetShootPos() ) <= 90000 ) or ( IsValid( fSpectatingEnt ) and not fSpectatingEnt:IsPlayer() and talker:GetPos():DistToSqr( fSpectatingEnt:GetPos() ) <= 90000 ) ) then
             -- Make sure you don't get it twice
             -- the person is saying it close to where you are roaming
             -- The person you're spectating or someone near the person you're spectating is saying it
@@ -224,7 +224,7 @@ local function playerSay( talker, message )
     end
 end
 
-hook.Add( "PlayerSay", "FSpectate", playerSay )
+hook.Add( "PlayerSay", "fSpectate", playerSay )
 
 -- ULX' !spectate command conflicts with mine
 -- The concommand "ulx spectate" should still work.
@@ -238,4 +238,4 @@ local function fixAdminModIncompat()
     end
 end
 
-hook.Add( "InitPostEntity", "FSpectate", fixAdminModIncompat )
+hook.Add( "InitPostEntity", "fSpectate", fixAdminModIncompat )
