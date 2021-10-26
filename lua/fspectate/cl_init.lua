@@ -9,9 +9,9 @@ local roamPos -- the position when roaming free
 local roamVelocity = Vector(0)
 local thirdPersonDistance = 100
 
-/*---------------------------------------------------------------------------
+--[[-------------------------------------------------------------------------
 Retrieve the current spectated player
----------------------------------------------------------------------------*/
+---------------------------------------------------------------------------]]
 function FSpectate.getSpecEnt()
     if isSpectating and not isRoaming then
         return IsValid(specEnt) and specEnt or nil
@@ -20,10 +20,10 @@ function FSpectate.getSpecEnt()
     end
 end
 
-/*---------------------------------------------------------------------------
+--[[-------------------------------------------------------------------------
 startHooks
 FAdmin tab buttons
----------------------------------------------------------------------------*/
+---------------------------------------------------------------------------]]
 hook.Add("Initialize", "FSpectate", function()
     surface.CreateFont("UiBold", {
         size = 16,
@@ -58,9 +58,9 @@ hook.Add("Initialize", "FSpectate", function()
     end
 end)
 
-/*---------------------------------------------------------------------------
+--[[-------------------------------------------------------------------------
 Get the thirdperson position
----------------------------------------------------------------------------*/
+---------------------------------------------------------------------------]]
 local function getThirdPersonPos(ent)
     local aimvector = LocalPlayer():GetAimVector()
     local startPos = ent:IsPlayer() and ent:GetShootPos() or ent:LocalToWorld(ent:OBBCenter())
@@ -77,9 +77,9 @@ local function getThirdPersonPos(ent)
     return trace.HitPos + trace.HitNormal * 10
 end
 
-/*---------------------------------------------------------------------------
+--[[-------------------------------------------------------------------------
 Get the CalcView table
----------------------------------------------------------------------------*/
+---------------------------------------------------------------------------]]
 local view = {}
 local function getCalcView()
     if not isRoaming then
@@ -104,11 +104,11 @@ local function getCalcView()
     return view
 end
 
-/*---------------------------------------------------------------------------
+--[[-------------------------------------------------------------------------
 specCalcView
 Override the view for the player to look through the spectated player's eyes
----------------------------------------------------------------------------*/
-local function specCalcView(ply, origin, angles, fov)
+---------------------------------------------------------------------------]]
+local function specCalcView()
     if not IsValid(specEnt) and not isRoaming then
         startFreeRoam()
         return
@@ -123,9 +123,9 @@ local function specCalcView(ply, origin, angles, fov)
     return view
 end
 
-/*---------------------------------------------------------------------------
+--[[-------------------------------------------------------------------------
 Find the right player to spectate
----------------------------------------------------------------------------*/
+---------------------------------------------------------------------------]]
 local function findNearestObject()
     local aimvec = LocalPlayer():GetAimVector()
 
@@ -159,9 +159,9 @@ local function findNearestObject()
     return foundPly
 end
 
-/*---------------------------------------------------------------------------
+--[[-------------------------------------------------------------------------
 Spectate the person you're looking at while you're roaming
----------------------------------------------------------------------------*/
+---------------------------------------------------------------------------]]
 local function spectateLookingAt()
     local obj = findNearestObject()
 
@@ -175,13 +175,13 @@ local function spectateLookingAt()
     net.SendToServer()
 end
 
-/*---------------------------------------------------------------------------
+--[[-------------------------------------------------------------------------
 specBinds
 Change binds to perform spectate specific tasks
----------------------------------------------------------------------------*/
+---------------------------------------------------------------------------]]
 -- Manual keysDown table, so I can return true in plyBindPress and still detect key presses
 local keysDown = {}
-local function specBinds(ply, bind, pressed)
+local function specBinds( _, bind, pressed)
     local key = input.LookupBinding(bind)
 
     if bind == "+jump" then
@@ -220,10 +220,10 @@ local function specBinds(ply, bind, pressed)
     -- Do not return otherwise, spectating admins should be able to move to avoid getting detected
 end
 
-/*---------------------------------------------------------------------------
+--[[------------------------------------------------------------------------
 Scoreboardshow
 Set to main view when roaming, open on a player when spectating
----------------------------------------------------------------------------*/
+---------------------------------------------------------------------------]]
 local function fadminmenushow()
     if isRoaming then
         FAdmin.ScoreBoard.ChangeView("Main")
@@ -234,10 +234,10 @@ local function fadminmenushow()
 end
 
 
-/*---------------------------------------------------------------------------
+--[[-------------------------------------------------------------------------
 RenderScreenspaceEffects
 Draws the lines from players' eyes to where they are looking
----------------------------------------------------------------------------*/
+---------------------------------------------------------------------------]]
 local LineMat = Material("cable/new_cable_lit")
 local linesToDraw = {}
 local function lookingLines()
@@ -252,10 +252,10 @@ local function lookingLines()
     cam.End3D()
 end
 
-/*---------------------------------------------------------------------------
+--[[--------------------------------------------------------------------------
 gunpos
 Gets the position of a player's gun
----------------------------------------------------------------------------*/
+--------------------------------------------------------------------------]]
 local function gunpos(ply)
     local wep = ply:GetActiveWeapon()
     if not IsValid(wep) then return ply:EyePos() end
@@ -264,10 +264,10 @@ local function gunpos(ply)
     return att.Pos
 end
 
-/*---------------------------------------------------------------------------
+--[[---------------------------------------------------------------------------
 Spectate think
 Free roaming position updates
----------------------------------------------------------------------------*/
+---------------------------------------------------------------------------]]
 local function specThink()
     local ply = LocalPlayer()
 
@@ -326,9 +326,9 @@ local function specThink()
     roamPos = roamPos + roamVelocity * frametime
 end
 
-/*---------------------------------------------------------------------------
+--[[---------------------------------------------------------------------------
 Draw help on the screen
----------------------------------------------------------------------------*/
+---------------------------------------------------------------------------]]
 local uiForeground, uiBackground = Color(240, 240, 255, 255), Color(20, 20, 20, 120)
 local red = Color(255, 0, 0, 255)
 local function drawHelp()
@@ -376,9 +376,9 @@ local function drawHelp()
     draw.WordBox(2, bottomLeft.x, bottomLeft.y + 12, "Left click to spectate!", "UiBold", uiBackground, uiForeground)
 end
 
-/*---------------------------------------------------------------------------
+--[[---------------------------------------------------------------------------
 Start roaming free, rather than spectating a given player
----------------------------------------------------------------------------*/
+---------------------------------------------------------------------------]]
 startFreeRoam = function()
     if IsValid(specEnt) and specEnt:IsPlayer() then
         roamPos = thirdperson and getThirdPersonPos(specEnt) or specEnt:GetShootPos()
@@ -392,10 +392,10 @@ startFreeRoam = function()
     keysDown = {}
 end
 
-/*---------------------------------------------------------------------------
+--[[---------------------------------------------------------------------------
 specEnt
 Spectate a player
----------------------------------------------------------------------------*/
+---------------------------------------------------------------------------]]
 local function startSpectate()
     isRoaming = net.ReadBool()
     specEnt = net.ReadEntity()

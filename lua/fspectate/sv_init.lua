@@ -62,7 +62,7 @@ local function startSpectating(ply, target)
     hook.Call("FSpectate_start", nil, ply, target)
 end
 
-local function Spectate(ply, cmd, args)
+local function Spectate(ply, _, args)
     CAMI.PlayerHasAccess(ply, "FSpectate", function(b, _)
         if not b then ply:ChatPrint("No Access!") return end
 
@@ -101,7 +101,7 @@ net.Receive("FSpectateTarget", function(_, ply)
     end)
 end)
 
-local function TPToPos(ply, cmd, args)
+local function TPToPos(ply, _, args)
     CAMI.PlayerHasAccess(ply, "FSpectateTeleport", function(b, _)
         if not b then ply:ChatPrint("No Access!") return end
 
@@ -120,7 +120,7 @@ local function TPToPos(ply, cmd, args)
 end
 concommand.Add("FTPToPos", TPToPos)
 
-local function SpectateVisibility(ply, viewEnt)
+local function SpectateVisibility(ply, _)
     if not ply.FSpectating then return end
 
     if IsValid(ply.FSpectatingEnt) then
@@ -133,7 +133,7 @@ local function SpectateVisibility(ply, viewEnt)
 end
 hook.Add("SetupPlayerVisibility", "FSpectate", SpectateVisibility)
 
-local function setSpectatePos(ply, cmd, args)
+local function setSpectatePos(ply, _, args)
     CAMI.PlayerHasAccess(ply, "FSpectate", function(b, _)
         if not b then return end
 
@@ -148,7 +148,7 @@ local function setSpectatePos(ply, cmd, args)
 end
 concommand.Add("_FSpectatePosUpdate", setSpectatePos)
 
-local function endSpectate(ply, cmd, args)
+local function endSpectate(ply)
     ply.FSpectatingEnt = nil
     ply.FSpectating = nil
     ply.FSpectatePos = nil
