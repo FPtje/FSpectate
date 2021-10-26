@@ -23,16 +23,16 @@ local function findPlayer(info)
     return nil
 end
 
-local FSpectating = {}
+local fSpectating = {}
 -- For Lua Refresh
 for _, ply in ipairs(player.GetHumans()) do
-    FSpectating[ply] = ply.FSpectating
+    fSpectating[ply] = ply.fSpectating
 end
 
 local function clearInvalidSpectators()
-    for ply, _ in pairs(FSpectating) do
+    for ply, _ in pairs(fSpectating) do
         if not IsValid(ply) then
-            FSpectating[ply] = nil
+            fSpectating[ply] = nil
         end
     end
 end
@@ -41,19 +41,19 @@ local function startSpectating(ply, target)
     local canSpectate = hook.Call("FSpectate_canSpectate", nil, ply, target)
     if canSpectate == false then return end
 
-    -- Clear invalid spectators from the FSpectating table to prevent build up.
+    -- Clear invalid spectators from the fSpectating table to prevent build up.
     clearInvalidSpectators()
 
-    ply.FSpectatingEnt = target
-    ply.FSpectating = true
-    FSpectating[ply] = true
+    ply.fSpectatingEnt = target
+    ply.fSpectating = true
+    fSpectating[ply] = true
 
     ply:ExitVehicle()
 
     net.Start("FSpectate")
         net.WriteBool(target == nil)
-        if IsValid(ply.FSpectatingEnt) then
-            net.WriteEntity(ply.FSpectatingEnt)
+        if IsValid(ply.fSpectatingEnt) then
+            net.WriteEntity(ply.fSpectatingEnt)
         end
     net.Send(ply)
 
@@ -121,10 +121,10 @@ end
 concommand.Add("FTPToPos", TPToPos)
 
 local function SpectateVisibility(ply, _)
-    if not ply.FSpectating then return end
+    if not ply.fSpectating then return end
 
-    if IsValid(ply.FSpectatingEnt) then
-        AddOriginToPVS(ply.FSpectatingEnt:IsPlayer() and ply.FSpectatingEnt:GetShootPos() or ply.FSpectatingEnt:GetPos())
+    if IsValid(ply.fSpectatingEnt) then
+        AddOriginToPVS(ply.fSpectatingEnt:IsPlayer() and ply.fSpectatingEnt:GetShootPos() or ply.fSpectatingEnt:GetPos())
     end
 
     if ply.FSpectatePos then
@@ -137,22 +137,22 @@ local function setSpectatePos(ply, _, args)
     CAMI.PlayerHasAccess(ply, "FSpectate", function(b, _)
         if not b then return end
 
-        if not ply.FSpectating or not args[3] then return end
+        if not ply.fSpectating or not args[3] then return end
         local x, y, z = tonumber(args[1] or 0), tonumber(args[2] or 0), tonumber(args[3] or 0)
 
         ply.FSpectatePos = Vector(x, y, z)
 
         -- A position update request implies that the spectator is not spectating another player (anymore)
-        ply.FSpectatingEnt = nil
+        ply.fSpectatingEnt = nil
     end)
 end
 concommand.Add("_FSpectatePosUpdate", setSpectatePos)
 
 local function endSpectate(ply)
-    ply.FSpectatingEnt = nil
-    ply.FSpectating = nil
+    ply.fSpectatingEnt = nil
+    ply.fSpectating = nil
     ply.FSpectatePos = nil
-    FSpectating[ply] = nil
+    fSpectating[ply] = nil
     hook.Call("FSpectate_stop", nil, ply)
 end
 concommand.Add("FSpectate_StopSpectating", endSpectate)
@@ -160,7 +160,7 @@ concommand.Add("FSpectate_StopSpectating", endSpectate)
 local vrad = DarkRP and GM.Config.voiceradius
 local voiceDistance = DarkRP and GM.Config.voiceDistance * GM.Config.voiceDistance or 302500 -- Default 550 units
 local function playerVoice(listener, talker)
-    if not FSpectating[listener] then return end
+    if not fSpectating[listener] then return end
 
     local canHearLocal, surround = GAMEMODE:PlayerCanHearPlayersVoice(listener, talker)
 
@@ -169,9 +169,9 @@ local function playerVoice(listener, talker)
         return canHearLocal, surround
     end
 
-    local FSpectatingEnt = listener.FSpectatingEnt
-    if not IsValid(FSpectatingEnt) or not FSpectatingEnt:IsPlayer() then
-        local spectatePos = IsValid(FSpectatingEnt) and FSpectatingEnt:GetPos() or listener.FSpectatePos
+    local fSpectatingEnt = listener.fSpectatingEnt
+    if not IsValid(fSpectatingEnt) or not fSpectatingEnt:IsPlayer() then
+        local spectatePos = IsValid(fSpectatingEnt) and fSpectatingEnt:GetPos() or listener.FSpectatePos
         if not vrad or not spectatePos then return end
 
         -- Return whether the listener is a in distance smaller than 550
@@ -179,12 +179,12 @@ local function playerVoice(listener, talker)
     end
 
     -- you can always hear the person you're spectating
-    if FSpectatingEnt == talker then
+    if fSpectatingEnt == talker then
         return true, surround
     end
 
     -- You can hear someone if your spectate target can hear them
-    local canHear = GAMEMODE:PlayerCanHearPlayersVoice(FSpectatingEnt, talker)
+    local canHear = GAMEMODE:PlayerCanHearPlayersVoice(fSpectatingEnt, talker)
 
     return canHear, surround
 end
@@ -204,10 +204,10 @@ local function playerSay(talker, message)
     local talkerName = talker:Nick()
     local col = Color(255, 255, 255, 255)
     for _, ply in ipairs(player.GetAll()) do
-        if ply == talker or not ply.FSpectating then continue end
+        if ply == talker or not ply.fSpectating then continue end
 
         local shootPos = talker:GetShootPos()
-        local FSpectatingEnt = ply.FSpectatingEnt
+        local fSpectatingEnt = ply.fSpectatingEnt
         if
             -- Make sure you don't get it twice
             ply:GetShootPos():DistToSqr(shootPos) > 62500 and
@@ -216,12 +216,12 @@ local function playerSay(talker, message)
                 ply.FSpectatePos and shootPos:DistToSqr(ply.FSpectatePos) <= 360000 or
 
                 -- The person you're spectating or someone near the person you're spectating is saying it
-                (IsValid(FSpectatingEnt) and FSpectatingEnt:IsPlayer() and
-                shootPos:DistToSqr(FSpectatingEnt:GetShootPos()) <= 90000) or
+                (IsValid(fSpectatingEnt) and fSpectatingEnt:IsPlayer() and
+                shootPos:DistToSqr(fSpectatingEnt:GetShootPos()) <= 90000) or
 
                 -- Close to the object you're spectating
-                (IsValid(FSpectatingEnt) and not FSpectatingEnt:IsPlayer() and
-                talker:GetPos():DistToSqr(FSpectatingEnt:GetPos()) <= 90000
+                (IsValid(fSpectatingEnt) and not fSpectatingEnt:IsPlayer() and
+                talker:GetPos():DistToSqr(fSpectatingEnt:GetPos()) <= 90000
                 )
             ) then
 
