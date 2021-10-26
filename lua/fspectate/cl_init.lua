@@ -238,12 +238,12 @@ end
 RenderScreenspaceEffects
 Draws the lines from players' eyes to where they are looking
 ---------------------------------------------------------------------------]]
-local LineMat = Material("cable/new_cable_lit")
+local lineMat = Material("cable/new_cable_lit")
 local linesToDraw = {}
 local function lookingLines()
     if not linesToDraw[0] then return end
 
-    render.SetMaterial(LineMat)
+    render.SetMaterial(lineMat)
 
     cam.Start3D(view.origin, view.angles)
         for i = 0, #linesToDraw, 3 do
