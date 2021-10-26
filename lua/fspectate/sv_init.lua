@@ -72,7 +72,26 @@ local function Spectate(ply, cmd, args)
         startSpectating(ply, target)
     end)
 end
-concommand.Add("FSpectate", Spectate)
+
+local function autoComplete( _, stringargs )
+    stringargs = string.Trim( stringargs ) -- Remove any spaces before or after.
+    stringargs = string.lower( stringargs )
+    local tbl = { }
+
+    for _, v in ipairs( player.GetAll( ) ) do
+        local nick = v:Nick( )
+
+        if string.find( string.lower( nick ), stringargs ) then
+            nick = "\"" .. nick .. "\"" -- We put quotes around it in case players have spaces in their names.
+            nick = "FSpectate " .. nick -- We also need to put the cmd before for it to work properly.
+            table.insert( tbl, nick )
+        end
+    end
+
+    return tbl
+end
+
+concommand.Add("FSpectate", Spectate, autoComplete)
 
 net.Receive("FSpectateTarget", function(_, ply)
     CAMI.PlayerHasAccess(ply, "FSpectate", function(b, _)

@@ -396,7 +396,7 @@ end
 specEnt
 Spectate a player
 ---------------------------------------------------------------------------*/
-local function startSpectate(um)
+local function startSpectate()
     isRoaming = net.ReadBool()
     specEnt = net.ReadEntity()
     specEnt = IsValid(specEnt) and specEnt or nil
@@ -424,10 +424,10 @@ local function startSpectate(um)
 end
 net.Receive("FSpectate", startSpectate)
 
-/*---------------------------------------------------------------------------
+--[[---------------------------------------------------------------------------
 stopSpectating
 Stop spectating a player
----------------------------------------------------------------------------*/
+---------------------------------------------------------------------------]]
 stopSpectating = function()
     hook.Remove("CalcView", "FSpectate")
     hook.Remove("PlayerBindPress", "FSpectate")
