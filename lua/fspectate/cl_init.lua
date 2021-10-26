@@ -1,4 +1,4 @@
-FSpectate = {}
+fSpectate = {}
 local stopSpectating, startFreeRoam
 local isSpectating = false
 local specEnt
@@ -11,7 +11,7 @@ local thirdPersonDistance = 100
 --[[-------------------------------------------------------------------------
 Retrieve the current spectated player
 ---------------------------------------------------------------------------]]
-function FSpectate.getSpecEnt()
+function fSpectate.getSpecEnt()
     if isSpectating and not isRoaming then
         return IsValid( specEnt ) and specEnt or nil
     else
@@ -23,7 +23,7 @@ end
 startHooks
 FAdmin tab buttons
 ---------------------------------------------------------------------------]]
-hook.Add( "Initialize", "FSpectate", function()
+hook.Add( "Initialize", "fSpectate", function()
     surface.CreateFont( "UiBold", {
         size = 16,
         weight = 800,
@@ -40,13 +40,13 @@ hook.Add( "Initialize", "FSpectate", function()
         -- Right click option
         FAdmin.ScoreBoard.Main.AddPlayerRightClick( "Spectate", function( ply )
             if not IsValid( ply ) then return end
-            RunConsoleCommand( "FSpectate", ply:UserID() )
+            RunConsoleCommand( "fSpectate", ply:UserID() )
         end )
 
         local canSpectate = false
 
         local function calcAccess()
-            CAMI.PlayerHasAccess( LocalPlayer(), "FSpectate", function( b, _ )
+            CAMI.PlayerHasAccess( LocalPlayer(), "fSpectate", function( b, _ )
                 canSpectate = b
             end )
         end
@@ -60,7 +60,7 @@ hook.Add( "Initialize", "FSpectate", function()
             return canSpectate and ply ~= LocalPlayer()
         end, function( ply )
             if not IsValid( ply ) then return end
-            RunConsoleCommand( "FSpectate", ply:UserID() )
+            RunConsoleCommand( "fSpectate", ply:UserID() )
         end )
     end
 end )
@@ -167,7 +167,7 @@ local function spectateLookingAt()
     if not IsValid( obj ) then return end
     isRoaming = false
     specEnt = obj
-    net.Start( "FSpectateTarget" )
+    net.Start( "fSpectateTarget" )
     net.WriteEntity( obj )
     net.SendToServer()
 end
@@ -405,40 +405,40 @@ local function startSpectate()
 
     isSpectating = true
     keysDown = {}
-    hook.Add( "CalcView", "FSpectate", specCalcView )
-    hook.Add( "PlayerBindPress", "FSpectate", specBinds )
-    hook.Add( "ShouldDrawLocalPlayer", "FSpectate", function() return isRoaming or thirdperson end )
-    hook.Add( "Think", "FSpectate", specThink )
-    hook.Add( "HUDPaint", "FSpectate", drawHelp )
-    hook.Add( "FAdmin_ShowFAdminMenu", "FSpectate", fadminmenushow )
-    hook.Add( "RenderScreenspaceEffects", "FSpectate", lookingLines )
+    hook.Add( "CalcView", "fSpectate", specCalcView )
+    hook.Add( "PlayerBindPress", "fSpectate", specBinds )
+    hook.Add( "ShouldDrawLocalPlayer", "fSpectate", function() return isRoaming or thirdperson end )
+    hook.Add( "Think", "fSpectate", specThink )
+    hook.Add( "HUDPaint", "fSpectate", drawHelp )
+    hook.Add( "FAdmin_ShowFAdminMenu", "fSpectate", fadminmenushow )
+    hook.Add( "RenderScreenspaceEffects", "fSpectate", lookingLines )
 
-    timer.Create( "FSpectatePosUpdate", 0.5, 0, function()
+    timer.Create( "fSpectatePosUpdate", 0.5, 0, function()
         if not isRoaming then return end
-        RunConsoleCommand( "_FSpectatePosUpdate", roamPos.x, roamPos.y, roamPos.z )
+        RunConsoleCommand( "_fSpectatePosUpdate", roamPos.x, roamPos.y, roamPos.z )
     end )
 end
 
-net.Receive( "FSpectate", startSpectate )
+net.Receive( "fSpectate", startSpectate )
 
 --[[---------------------------------------------------------------------------
 stopSpectating
 Stop spectating a player
 ---------------------------------------------------------------------------]]
 stopSpectating = function()
-    hook.Remove( "CalcView", "FSpectate" )
-    hook.Remove( "PlayerBindPress", "FSpectate" )
-    hook.Remove( "ShouldDrawLocalPlayer", "FSpectate" )
-    hook.Remove( "Think", "FSpectate" )
-    hook.Remove( "HUDPaint", "FSpectate" )
-    hook.Remove( "FAdmin_ShowFAdminMenu", "FSpectate" )
-    hook.Remove( "RenderScreenspaceEffects", "FSpectate" )
-    timer.Remove( "FSpectatePosUpdate" )
+    hook.Remove( "CalcView", "fSpectate" )
+    hook.Remove( "PlayerBindPress", "fSpectate" )
+    hook.Remove( "ShouldDrawLocalPlayer", "fSpectate" )
+    hook.Remove( "Think", "fSpectate" )
+    hook.Remove( "HUDPaint", "fSpectate" )
+    hook.Remove( "FAdmin_ShowFAdminMenu", "fSpectate" )
+    hook.Remove( "RenderScreenspaceEffects", "fSpectate" )
+    timer.Remove( "fSpectatePosUpdate" )
 
     if IsValid( specEnt ) then
         specEnt:SetNoDraw( false )
     end
 
-    RunConsoleCommand( "FSpectate_StopSpectating" )
+    RunConsoleCommand( "fSpectate_StopSpectating" )
     isSpectating = false
 end
