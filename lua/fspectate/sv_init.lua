@@ -90,7 +90,7 @@ local function autoComplete( _, stringargs )
     return tbl
 end
 
-concommand.Add( "fSpectate", Spectate, autoComplete )
+concommand.Add( "fspectate", Spectate, autoComplete )
 
 net.Receive( "fSpectateTarget", function( _, ply )
     CAMI.PlayerHasAccess( ply, "fSpectate", function( b, _ )

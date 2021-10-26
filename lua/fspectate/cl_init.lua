@@ -40,7 +40,7 @@ hook.Add( "Initialize", "fSpectate", function()
         -- Right click option
         FAdmin.ScoreBoard.Main.AddPlayerRightClick( "Spectate", function( ply )
             if not IsValid( ply ) then return end
-            RunConsoleCommand( "fSpectate", ply:UserID() )
+            RunConsoleCommand( "fspectate", ply:UserID() )
         end )
 
         local canSpectate = false
@@ -60,7 +60,7 @@ hook.Add( "Initialize", "fSpectate", function()
             return canSpectate and ply ~= LocalPlayer()
         end, function( ply )
             if not IsValid( ply ) then return end
-            RunConsoleCommand( "fSpectate", ply:UserID() )
+            RunConsoleCommand( "fspectate", ply:UserID() )
         end )
     end
 end )
