@@ -2,6 +2,8 @@ fSpectate = {}
 local stopSpectating, startFreeRoam
 local isSpectating = false
 local specEnt
+local showHitboxes = false
+local hideBeams = false
 local thirdperson = true
 local isRoaming = false
 local roamPos -- the position when roaming free
@@ -133,6 +135,54 @@ local function specCalcView()
 end
 
 --[[-------------------------------------------------------------------------
+Hitbox drawing code
+---------------------------------------------------------------------------]]
+local function drawGreenBoxes()
+    if not showHitboxes then return end
+    render.OverrideDepthEnable( true, false )
+
+    for _, v in ipairs( player.GetAll() ) do
+        if v == specEnt then continue end
+
+        for i = 0, v:GetHitBoxGroupCount() - 1 do
+            for _i = 0, v:GetHitBoxCount( i ) - 1 do
+                local bone = v:GetHitBoxBone( _i, i )
+                if not bone then continue end
+                local min, max = v:GetHitBoxBounds( _i, i )
+
+                if ( v:GetBonePosition( bone ) ) then
+                    local pos, ang = v:GetBonePosition( bone )
+                    render.DrawWireframeBox( pos, ang, min, max, Color( 0, 255, 0, 255 ) )
+                end
+            end
+        end
+    end
+
+    render.OverrideDepthEnable( false, false )
+end
+
+local function drawRedBoxes()
+    if not showHitboxes then return end
+
+    for _, v in ipairs( player.GetAll() ) do
+        if v == specEnt then continue end
+
+        for i = 0, v:GetHitBoxGroupCount() - 1 do
+            for _i = 0, v:GetHitBoxCount( i ) - 1 do
+                local bone = v:GetHitBoxBone( _i, i )
+                if not bone then continue end
+                local min, max = v:GetHitBoxBounds( _i, i )
+
+                if ( v:GetBonePosition( bone ) ) then
+                    local pos, ang = v:GetBonePosition( bone )
+                    render.DrawWireframeBox( pos, ang, min, max, Color( 255, 0, 0, 255 ) )
+                end
+            end
+        end
+    end
+end
+
+--[[-------------------------------------------------------------------------
 Find the right player to spectate
 ---------------------------------------------------------------------------]]
 local function findNearestObject()
@@ -208,6 +258,12 @@ local function specBinds( _, bind, pressed )
         thirdperson = not thirdperson
 
         return true
+    elseif bind == "+use" and pressed then
+        hideBeams = not hideBeams
+
+        return true
+    elseif bind == "+duck" and pressed then
+        showHitboxes = not showHitboxes
     elseif isRoaming and not LocalPlayer():KeyDown( IN_USE ) then
         local keybind = string.lower( string.match( bind, "+([a-z A-Z 0-9]+)" ) or "" )
         if not keybind or keybind == "use" or keybind == "showscores" or string.find( bind, "messagemode" ) then return end
@@ -242,6 +298,7 @@ local linesToDraw = {}
 
 local function lookingLines()
     if not linesToDraw[0] then return end
+    if hideBeams then return end
     render.SetMaterial( lineMat )
     cam.Start3D( view.origin, view.angles )
 
@@ -337,30 +394,48 @@ local red = Color( 255, 0, 0, 255 )
 
 local function drawHelp()
     local scrHalfH = math.floor( ScrH() / 2 )
+    local target = findNearestObject()
+    local pls = player.GetAll()
+
     draw.WordBox( 2, 10, scrHalfH, "Left click: (Un)select player to spectate", "UiBold", uiBackground, uiForeground )
     draw.WordBox( 2, 10, scrHalfH + 20, isRoaming and "Right click: quickly move forwards" or "Right click: toggle thirdperson", "UiBold", uiBackground, uiForeground )
     draw.WordBox( 2, 10, scrHalfH + 40, "Jump: Stop spectating", "UiBold", uiBackground, uiForeground )
-    draw.WordBox( 2, 10, scrHalfH + 60, "Reload: Stop spectating and teleport", "UiBold", uiBackground, uiForeground )
+    draw.WordBox( 2, 10, scrHalfH + 60, "Use: Toggle aim lines", "UiBold", uiBackground, uiForeground )
+    draw.WordBox( 2, 10, scrHalfH + 80, "Crouch: Toggle hitboxes", "UiBold", uiBackground, uiForeground )
+
+    if not isRoaming and IsValid( specEnt ) then
+        if specEnt:IsPlayer() then
+            draw.WordBox( 2, 10, scrHalfH + 100, "Spectating: ", "UiBold", uiBackground, uiForeground )
+            draw.WordBox( 2, 101, scrHalfH + 100, specEnt:Nick() .. " " .. specEnt:SteamID(), "UiBold", uiBackground, team.GetColor( specEnt:Team() ) )
+        else
+            draw.WordBox( 2, 10, scrHalfH + 100, "Owner: ", "UiBold", uiBackground, uiForeground )
+
+            if specEnt:CPPIGetOwner() then
+                draw.WordBox( 2, 70, scrHalfH + 100, specEnt:CPPIGetOwner():Nick() .. " " .. specEnt:CPPIGetOwner():SteamID(), "UiBold", uiBackground, team.GetColor( specEnt:CPPIGetOwner():Team() ) )
+            else
+                draw.WordBox( 2, 70, scrHalfH + 100, "World", "UiBold", uiBackground, uiForeground )
+            end
+        end
+    end
 
     if FAdmin then
         draw.WordBox( 2, 10, scrHalfH + 80, "Opening FAdmin's menu while spectating a player", "UiBold", uiBackground, uiForeground )
         draw.WordBox( 2, 10, scrHalfH + 100, "\twill open their page!", "UiBold", uiBackground, uiForeground )
     end
 
-    local target = findNearestObject()
-    local pls = player.GetAll()
-
-    for i = 1, #pls do
-        local ply = pls[i]
-        if not IsValid( ply ) then continue end
-        if not isRoaming and ply == specEnt then continue end
-        local pos = ply:GetShootPos():ToScreen()
-        if not pos.visible then continue end
-        local x, y = pos.x, pos.y
-        draw.RoundedBox( 2, x, y - 6, 12, 12, team.GetColor( ply:Team() ) )
-        draw.WordBox( 2, x, y - 66, ply:Nick(), "UiBold", uiBackground, uiForeground )
-        draw.WordBox( 2, x, y - 46, "Health: " .. ply:Health(), "UiBold", uiBackground, uiForeground )
-        draw.WordBox( 2, x, y - 26, ply:GetUserGroup(), "UiBold", uiBackground, uiForeground )
+    if not showHitboxes then
+        for i = 1, #pls do
+            local ply = pls[i]
+            if not IsValid( ply ) then continue end
+            if not isRoaming and ply == specEnt then continue end
+            local pos = ply:GetShootPos():ToScreen()
+            if not pos.visible then continue end
+            local x, y = pos.x, pos.y
+            draw.RoundedBox( 2, x, y - 6, 12, 12, team.GetColor( ply:Team() ) )
+            draw.WordBox( 2, x, y - 66, ply:Nick(), "UiBold", uiBackground, uiForeground )
+            draw.WordBox( 2, x, y - 46, "Health: " .. ply:Health(), "UiBold", uiBackground, uiForeground )
+            draw.WordBox( 2, x, y - 26, ply:GetUserGroup(), "UiBold", uiBackground, uiForeground )
+        end
     end
 
     if not isRoaming then return end
@@ -412,6 +487,8 @@ local function startSpectate()
     hook.Add( "HUDPaint", "fSpectate", drawHelp )
     hook.Add( "FAdmin_ShowFAdminMenu", "fSpectate", fadminmenushow )
     hook.Add( "RenderScreenspaceEffects", "fSpectate", lookingLines )
+    hook.Add( "PostDrawOpaqueRenderables", "fSpectate", drawGreenBoxes )
+    hook.Add( "PreDrawOpaqueRenderables", "fSpectate", drawRedBoxes )
 
     timer.Create( "fSpectatePosUpdate", 0.5, 0, function()
         if not isRoaming then return end
@@ -434,6 +511,8 @@ stopSpectating = function()
     hook.Remove( "FAdmin_ShowFAdminMenu", "fSpectate" )
     hook.Remove( "RenderScreenspaceEffects", "fSpectate" )
     timer.Remove( "fSpectatePosUpdate" )
+    hook.Remove( "PreDrawOpaqueRenderables", "fSpectate" )
+    hook.Remove( "PostDrawOpaqueRenderables", "fSpectate" )
 
     if IsValid( specEnt ) then
         specEnt:SetNoDraw( false )
