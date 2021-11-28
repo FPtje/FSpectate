@@ -380,11 +380,11 @@ end
 Start roaming free, rather than spectating a given player
 ---------------------------------------------------------------------------*/
 startFreeRoam = function()
+    roamPos = isSpectating and roamPos or LocalPlayer():GetShootPos()
+
     if IsValid(specEnt) then
         if specEnt:IsPlayer() then
             roamPos = thirdperson and getThirdPersonPos(specEnt) or specEnt:GetShootPos()
-        else
-            roamPos = isSpectating and roamPos or LocalPlayer():GetShootPos()
         end
         specEnt:SetNoDraw(false)
     end
