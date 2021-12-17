@@ -137,48 +137,28 @@ end
 --[[-------------------------------------------------------------------------
 Hitbox drawing code
 ---------------------------------------------------------------------------]]
-local function drawGreenBoxes()
-    if not showHitboxes then return end
-    render.OverrideDepthEnable( true, false )
+local chamsmat1 = CreateMaterial( "CHAMSMATFSPEC1", "VertexLitGeneric", {["$basetexture"] = "models/debug/debugwhite", ["$model"] = 1, ["$ignorez"] = 1} )
+local chamsmat2 = CreateMaterial( "CHAMSMATFSPEC2", "VertexLitGeneric", {["$basetexture"] = "models/debug/debugwhite", ["$model"] = 1, ["$ignorez"] = 0} )
+local function drawCham( ply )
+    if not ply:Alive() then return end
+    if ply == LocalPlayer() then return end
 
-    for _, v in ipairs( player.GetAll() ) do
-        if v == specEnt then continue end
-
-        for i = 0, v:GetHitBoxGroupCount() - 1 do
-            for _i = 0, v:GetHitBoxCount( i ) - 1 do
-                local bone = v:GetHitBoxBone( _i, i )
-                if not bone then continue end
-                local min, max = v:GetHitBoxBounds( _i, i )
-
-                if ( v:GetBonePosition( bone ) ) then
-                    local pos, ang = v:GetBonePosition( bone )
-                    render.DrawWireframeBox( pos, ang, min, max, Color( 0, 255, 0, 255 ) )
-                end
-            end
-        end
-    end
-
-    render.OverrideDepthEnable( false, false )
+    local col = team.GetColor( ply:Team() )
+    cam.Start3D();
+        render.SuppressEngineLighting( true )
+        render.SetColorModulation( col.r / 1000, col.g / 1000, col.b / 1000 )
+        render.MaterialOverride( chamsmat1 )
+        ply:DrawModel()
+        render.SetColorModulation( col.r / 255, col.g / 255, col.b / 255 )
+        render.MaterialOverride( chamsmat2 )
+        ply:DrawModel()
+        render.SuppressEngineLighting( false )
+    cam.End3D();
 end
 
-local function drawRedBoxes()
-    if not showHitboxes then return end
-
-    for _, v in ipairs( player.GetAll() ) do
-        if v == specEnt then continue end
-
-        for i = 0, v:GetHitBoxGroupCount() - 1 do
-            for _i = 0, v:GetHitBoxCount( i ) - 1 do
-                local bone = v:GetHitBoxBone( _i, i )
-                if not bone then continue end
-                local min, max = v:GetHitBoxBounds( _i, i )
-
-                if ( v:GetBonePosition( bone ) ) then
-                    local pos, ang = v:GetBonePosition( bone )
-                    render.DrawWireframeBox( pos, ang, min, max, Color( 255, 0, 0, 255 ) )
-                end
-            end
-        end
+local function drawChams()
+    for _, ply in ipairs( player.GetAll() ) do
+        drawCham( ply )
     end
 end
 
@@ -431,8 +411,7 @@ local function drawHelp()
             local pos = ply:GetShootPos():ToScreen()
             if not pos.visible then continue end
             local x, y = pos.x, pos.y
-            draw.RoundedBox( 2, x, y - 6, 12, 12, team.GetColor( ply:Team() ) )
-            draw.WordBox( 2, x, y - 66, ply:Nick(), "UiBold", uiBackground, uiForeground )
+            draw.WordBox( 2, x, y - 66, ply:Nick(), "UiBold", uiBackground, team.GetColor( ply:Team() ) )
             draw.WordBox( 2, x, y - 46, "Health: " .. ply:Health(), "UiBold", uiBackground, uiForeground )
             draw.WordBox( 2, x, y - 26, ply:GetUserGroup(), "UiBold", uiBackground, uiForeground )
         end
@@ -487,8 +466,7 @@ local function startSpectate()
     hook.Add( "HUDPaint", "fSpectate", drawHelp )
     hook.Add( "FAdmin_ShowFAdminMenu", "fSpectate", fadminmenushow )
     hook.Add( "RenderScreenspaceEffects", "fSpectate", lookingLines )
-    hook.Add( "PostDrawOpaqueRenderables", "fSpectate", drawGreenBoxes )
-    hook.Add( "PreDrawOpaqueRenderables", "fSpectate", drawRedBoxes )
+    hook.Add( "PostDrawOpaqueRenderables", "fSpectate", drawChams )
 
     timer.Create( "fSpectatePosUpdate", 0.5, 0, function()
         if not isRoaming then return end
@@ -512,7 +490,6 @@ stopSpectating = function()
     hook.Remove( "RenderScreenspaceEffects", "fSpectate" )
     timer.Remove( "fSpectatePosUpdate" )
     hook.Remove( "PreDrawOpaqueRenderables", "fSpectate" )
-    hook.Remove( "PostDrawOpaqueRenderables", "fSpectate" )
 
     if IsValid( specEnt ) then
         specEnt:SetNoDraw( false )
