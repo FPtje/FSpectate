@@ -173,7 +173,7 @@ local function getCalcView()
         end
 
         roamPos = view.origin
-        view.drawviewer = false
+        view.drawviewer = true
 
         return view
     end
@@ -197,7 +197,6 @@ local function specCalcView()
     end
 
     view = getCalcView()
-    view.drawviewer = true
 
     if IsValid( specEnt ) then
         specEnt:SetNoDraw( not thirdperson )
