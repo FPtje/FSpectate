@@ -47,7 +47,23 @@ local function startSpectating( ply, target )
     end
 
     net.Send( ply )
-    local targetText = IsValid( target ) and target:IsPlayer() and ( target:Nick() .. " (" .. target:SteamID() .. ")" ) or IsValid( target ) and "an entity" or ""
+
+    local targetText
+    if IsValid( target ) then
+        if target:IsPlayer() then
+            targetText = target:Nick() .. " (" .. target:SteamID() .. ")"
+        else
+            local targetOwner = target:CPPIGetOwner()
+            if targetOwner then
+                targetText = target:GetClass() .. " owned by: " .. targetOwner:Nick() .. " (" .. targetOwner:SteamID() .. ")"
+            else
+                targetText = target:GetClass()
+            end
+        end
+    else
+        targetText = ""
+    end
+
     ply:ChatPrint( "You are now spectating " .. targetText )
     hook.Call( "fSpectate_start", nil, ply, target )
 end

@@ -453,15 +453,15 @@ local function drawHelp()
 
     if not isRoaming and IsValid( specEnt ) then
         if specEnt:IsPlayer() then
-            draw.WordBox( 2, 10, scrHalfH + 100, "Spectating: ", "UiBold", uiBackground, uiForeground )
-            draw.WordBox( 2, 101, scrHalfH + 100, specEnt:Nick() .. " " .. specEnt:SteamID(), "UiBold", uiBackground, team.GetColor( specEnt:Team() ) )
+            draw.WordBox( 2, 10, scrHalfH + 80, "Spectating: ", "UiBold", uiBackground, uiForeground )
+            draw.WordBox( 2, 101, scrHalfH + 80, specEnt:Nick() .. " " .. specEnt:SteamID(), "UiBold", uiBackground, team.GetColor( specEnt:Team() ) )
         else
-            draw.WordBox( 2, 10, scrHalfH + 100, "Owner: ", "UiBold", uiBackground, uiForeground )
+            draw.WordBox( 2, 10, scrHalfH + 80, "Owner: ", "UiBold", uiBackground, uiForeground )
 
             if specEnt:CPPIGetOwner() then
-                draw.WordBox( 2, 70, scrHalfH + 100, specEnt:CPPIGetOwner():Nick() .. " " .. specEnt:CPPIGetOwner():SteamID(), "UiBold", uiBackground, team.GetColor( specEnt:CPPIGetOwner():Team() ) )
+                draw.WordBox( 2, 70, scrHalfH + 80, specEnt:CPPIGetOwner():Nick() .. " " .. specEnt:CPPIGetOwner():SteamID(), "UiBold", uiBackground, team.GetColor( specEnt:CPPIGetOwner():Team() ) )
             else
-                draw.WordBox( 2, 70, scrHalfH + 100, "World", "UiBold", uiBackground, uiForeground )
+                draw.WordBox( 2, 70, scrHalfH + 80, "World", "UiBold", uiBackground, uiForeground )
             end
         end
     end
