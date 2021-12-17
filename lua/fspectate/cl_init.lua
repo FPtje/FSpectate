@@ -145,14 +145,13 @@ local function drawCham( ply )
 
     local col = team.GetColor( ply:Team() )
     cam.Start3D();
-        render.SuppressEngineLighting( true )
         render.SetColorModulation( col.r / 1000, col.g / 1000, col.b / 1000 )
         render.MaterialOverride( chamsmat1 )
         ply:DrawModel()
         render.SetColorModulation( col.r / 255, col.g / 255, col.b / 255 )
         render.MaterialOverride( chamsmat2 )
         ply:DrawModel()
-        render.SuppressEngineLighting( false )
+        render.MaterialOverride()
     cam.End3D();
 end
 
