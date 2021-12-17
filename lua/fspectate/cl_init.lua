@@ -2,7 +2,7 @@ fSpectate = {}
 local stopSpectating, startFreeRoam
 local isSpectating = false
 local specEnt
-local showHitboxes = false
+local showChams = false
 local hideBeams = false
 local thirdperson = true
 local isRoaming = false
@@ -157,6 +157,7 @@ local function drawCham( ply )
 end
 
 local function drawChams()
+    if showChams then return end
     for _, ply in ipairs( player.GetAll() ) do
         drawCham( ply )
     end
@@ -243,7 +244,7 @@ local function specBinds( _, bind, pressed )
 
         return true
     elseif bind == "+duck" and pressed then
-        showHitboxes = not showHitboxes
+        showChams = not showChams
     elseif isRoaming and not LocalPlayer():KeyDown( IN_USE ) then
         local keybind = string.lower( string.match( bind, "+([a-z A-Z 0-9]+)" ) or "" )
         if not keybind or keybind == "use" or keybind == "showscores" or string.find( bind, "messagemode" ) then return end
@@ -403,7 +404,7 @@ local function drawHelp()
         draw.WordBox( 2, 10, scrHalfH + 100, "\twill open their page!", "UiBold", uiBackground, uiForeground )
     end
 
-    if not showHitboxes then
+    if not showChams then
         for i = 1, #pls do
             local ply = pls[i]
             if not IsValid( ply ) then continue end
