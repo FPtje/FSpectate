@@ -197,6 +197,7 @@ local function specCalcView()
     end
 
     view = getCalcView()
+    view.drawviewer = true
 
     if IsValid( specEnt ) then
         specEnt:SetNoDraw( not thirdperson )
