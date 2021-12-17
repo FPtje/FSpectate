@@ -30,6 +30,8 @@ end
 --[[-------------------------------------------------------------------------
 VGUI Options menu
 ---------------------------------------------------------------------------]]
+local settingsMenu
+
 local function addCheckbox( panel, text, valchanger, default )
     local checkBox = panel:Add( "DCheckBoxLabel" )
     checkBox:Dock( TOP )
@@ -49,26 +51,32 @@ local function addLabel( panel, text )
     label:SetText( text )
 end
 
-local function openSettings()
-    local window = vgui.Create( "DFrame" )
-    window:SetSize( 250, 200 )
-    window:Center()
-    window:SetTitle( "FSpectate settings" )
-    window:MakePopup()
+local function toggleSettingsMenu()
+    if IsValid( settingsMenu ) then
+        settingsMenu:Remove()
+        return
+    end
 
-    addLabel( window, "Functional:" )
+    settingsMenu = vgui.Create( "DFrame" )
+    settingsMenu:SetSize( 250, 200 )
+    settingsMenu:Center()
+    settingsMenu:SetTitle( "FSpectate settings" )
+    settingsMenu:MakePopup()
+    settingsMenu:SetKeyboardInputEnabled( false )
 
-    addCheckbox( window, "Enable aimlines", function( val ) showBeams = val end, showBeams )
-    addCheckbox( window, "Enable X-Ray", function( val ) showChams = val end, showChams )
+    addLabel( settingsMenu, "Functional:" )
 
-    addLabel( window, "Visual:" )
+    addCheckbox( settingsMenu, "Enable aimlines", function( val ) showBeams = val end, showBeams )
+    addCheckbox( settingsMenu, "Enable X-Ray", function( val ) showChams = val end, showChams )
 
-    addCheckbox( window, "Show player info", function( val ) showPlayerInfo = val end, showPlayerInfo )
-    addCheckbox( window, "Show player names", function( val ) showNames = val end, showNames )
-    addCheckbox( window, "Show player health", function( val ) showHealth = val end, showHealth )
-    addCheckbox( window, "Show player rank", function( val ) showRank = val end, showRank )
+    addLabel( settingsMenu, "Visual:" )
 
-    local distanceSlider = vgui.Create( "DNumSlider", window )
+    addCheckbox( settingsMenu, "Show player info", function( val ) showPlayerInfo = val end, showPlayerInfo )
+    addCheckbox( settingsMenu, "Show player names", function( val ) showNames = val end, showNames )
+    addCheckbox( settingsMenu, "Show player health", function( val ) showHealth = val end, showHealth )
+    addCheckbox( settingsMenu, "Show player rank", function( val ) showRank = val end, showRank )
+
+    local distanceSlider = vgui.Create( "DNumSlider", settingsMenu )
     distanceSlider:Dock( TOP )
     distanceSlider:DockMargin( 5, 5, 0, 0 )
     distanceSlider:SetText( "Spectate distance" )
@@ -80,8 +88,8 @@ local function openSettings()
         thirdPersonDistance = value
     end
 
-    window:InvalidateLayout( true )
-    window:SizeToChildren( true, true )
+    settingsMenu:InvalidateLayout( true )
+    settingsMenu:SizeToChildren( true, true )
 end
 
 --[[-------------------------------------------------------------------------
@@ -302,7 +310,7 @@ local function specBinds( _, bind, pressed )
 
         return true
     elseif bind == "+use" and pressed then
-        openSettings()
+        toggleSettingsMenu()
 
         return true
     elseif isRoaming and not LocalPlayer():KeyDown( IN_USE ) then
