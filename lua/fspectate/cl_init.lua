@@ -2,13 +2,19 @@ fSpectate = {}
 local stopSpectating, startFreeRoam
 local isSpectating = false
 local specEnt
-local showChams = false
-local hideBeams = false
 local thirdperson = true
 local isRoaming = false
 local roamPos -- the position when roaming free
 local roamVelocity = Vector( 0 )
+
+-- Customizable vars
 local thirdPersonDistance = 100
+local showChams = false
+local showNames = true
+local showPlayerInfo = true
+local showHealth = true
+local showBeams = true
+local showRank = false
 
 --[[-------------------------------------------------------------------------
 Retrieve the current spectated player
@@ -19,6 +25,63 @@ function fSpectate.getSpecEnt()
     else
         return nil
     end
+end
+
+--[[-------------------------------------------------------------------------
+VGUI Options menu
+---------------------------------------------------------------------------]]
+local function addCheckbox( panel, text, valchanger, default )
+    local checkBox = panel:Add( "DCheckBoxLabel" )
+    checkBox:Dock( TOP )
+    checkBox:DockMargin( 10, 0, 0, 5 )
+    checkBox:SetText( text )
+    checkBox:SetValue( default )
+    checkBox:SizeToContents()
+    function checkBox:OnChange( bool )
+        valchanger( bool )
+    end
+end
+
+local function addLabel( panel, text )
+    local label = vgui.Create( "DLabel", panel )
+    label:Dock( TOP )
+    label:DockMargin( 5, 0, 0, 0 )
+    label:SetText( text )
+end
+
+local function openSettings()
+    local window = vgui.Create( "DFrame" )
+    window:SetSize( 250, 200 )
+    window:Center()
+    window:SetTitle( "FSpectate settings" )
+    window:MakePopup()
+
+    addLabel( window, "Functional:" )
+
+    addCheckbox( window, "Enable aimlines", function( val ) showBeams = val end, showBeams )
+    addCheckbox( window, "Enable X-Ray", function( val ) showChams = val end, showChams )
+
+    addLabel( window, "Visual:" )
+
+    addCheckbox( window, "Show player info", function( val ) showPlayerInfo = val end, showPlayerInfo )
+    addCheckbox( window, "Show player names", function( val ) showNames = val end, showNames )
+    addCheckbox( window, "Show player health", function( val ) showHealth = val end, showHealth )
+    addCheckbox( window, "Show player rank", function( val ) showRank = val end, showRank )
+
+    local distanceSlider = vgui.Create( "DNumSlider", window )
+    distanceSlider:Dock( TOP )
+    distanceSlider:DockMargin( 5, 5, 0, 0 )
+    distanceSlider:SetText( "Spectate distance" )
+    distanceSlider:SetMin( 0 )
+    distanceSlider:SetMax( 500 )
+    distanceSlider:SetDecimals( 0 )
+    distanceSlider:SetValue( thirdPersonDistance )
+    distanceSlider.OnValueChanged = function( _, value )
+        thirdPersonDistance = value
+    end
+
+    window:InvalidateLayout( true )
+    window:SizeToChildren( true, true )
 end
 
 --[[-------------------------------------------------------------------------
@@ -135,7 +198,7 @@ local function specCalcView()
 end
 
 --[[-------------------------------------------------------------------------
-Hitbox drawing code
+Chams drawing code
 ---------------------------------------------------------------------------]]
 local chamsmat1 = CreateMaterial( "CHAMSMATFSPEC1", "VertexLitGeneric", {["$basetexture"] = "models/debug/debugwhite", ["$model"] = 1, ["$ignorez"] = 1} )
 local chamsmat2 = CreateMaterial( "CHAMSMATFSPEC2", "VertexLitGeneric", {["$basetexture"] = "models/debug/debugwhite", ["$model"] = 1, ["$ignorez"] = 0} )
@@ -156,7 +219,7 @@ local function drawCham( ply )
 end
 
 local function drawChams()
-    if showChams then return end
+    if not showChams then return end
     for _, ply in ipairs( player.GetAll() ) do
         drawCham( ply )
     end
@@ -239,11 +302,9 @@ local function specBinds( _, bind, pressed )
 
         return true
     elseif bind == "+use" and pressed then
-        hideBeams = not hideBeams
+        openSettings()
 
         return true
-    elseif bind == "+duck" and pressed then
-        showChams = not showChams
     elseif isRoaming and not LocalPlayer():KeyDown( IN_USE ) then
         local keybind = string.lower( string.match( bind, "+([a-z A-Z 0-9]+)" ) or "" )
         if not keybind or keybind == "use" or keybind == "showscores" or string.find( bind, "messagemode" ) then return end
@@ -278,7 +339,7 @@ local linesToDraw = {}
 
 local function lookingLines()
     if not linesToDraw[0] then return end
-    if hideBeams then return end
+    if not showBeams then return end
     render.SetMaterial( lineMat )
     cam.Start3D( view.origin, view.angles )
 
@@ -380,8 +441,7 @@ local function drawHelp()
     draw.WordBox( 2, 10, scrHalfH, "Left click: (Un)select player to spectate", "UiBold", uiBackground, uiForeground )
     draw.WordBox( 2, 10, scrHalfH + 20, isRoaming and "Right click: quickly move forwards" or "Right click: toggle thirdperson", "UiBold", uiBackground, uiForeground )
     draw.WordBox( 2, 10, scrHalfH + 40, "Jump: Stop spectating", "UiBold", uiBackground, uiForeground )
-    draw.WordBox( 2, 10, scrHalfH + 60, "Use: Toggle aim lines", "UiBold", uiBackground, uiForeground )
-    draw.WordBox( 2, 10, scrHalfH + 80, "Crouch: Toggle hitboxes", "UiBold", uiBackground, uiForeground )
+    draw.WordBox( 2, 10, scrHalfH + 60, "Use: Open the settings menu", "UiBold", uiBackground, uiForeground )
 
     if not isRoaming and IsValid( specEnt ) then
         if specEnt:IsPlayer() then
@@ -403,7 +463,7 @@ local function drawHelp()
         draw.WordBox( 2, 10, scrHalfH + 100, "\twill open their page!", "UiBold", uiBackground, uiForeground )
     end
 
-    if not showChams then
+    if showPlayerInfo then
         for i = 1, #pls do
             local ply = pls[i]
             if not IsValid( ply ) then continue end
@@ -411,9 +471,25 @@ local function drawHelp()
             local pos = ply:GetShootPos():ToScreen()
             if not pos.visible then continue end
             local x, y = pos.x, pos.y
-            draw.WordBox( 2, x, y - 66, ply:Nick(), "UiBold", uiBackground, team.GetColor( ply:Team() ) )
-            draw.WordBox( 2, x, y - 46, "Health: " .. ply:Health(), "UiBold", uiBackground, uiForeground )
-            draw.WordBox( 2, x, y - 26, ply:GetUserGroup(), "UiBold", uiBackground, uiForeground )
+
+            local yAlign = y - 46
+
+            if showNames then
+                yAlign = yAlign + 20
+                draw.WordBox( 2, x, yAlign, ply:Nick(), "UiBold", uiBackground, team.GetColor( ply:Team() ) )
+            end
+
+            if showHealth then
+                yAlign = yAlign + 20
+                local health = ply:Health()
+                local colorHealth = math.Clamp( health, 0, 100 )
+                draw.WordBox( 2, x, yAlign, "Health: " .. health, "UiBold", uiBackground, HSVToColor( colorHealth, 1, 1 ) )
+            end
+
+            if showRank then
+                yAlign = yAlign + 20
+                draw.WordBox( 2, x, yAlign, ply:GetUserGroup(), "UiBold", uiBackground, uiForeground )
+            end
         end
     end
 
@@ -488,8 +564,8 @@ stopSpectating = function()
     hook.Remove( "HUDPaint", "fSpectate" )
     hook.Remove( "FAdmin_ShowFAdminMenu", "fSpectate" )
     hook.Remove( "RenderScreenspaceEffects", "fSpectate" )
+    hook.Remove( "PostDrawOpaqueRenderables", "fSpectate" )
     timer.Remove( "fSpectatePosUpdate" )
-    hook.Remove( "PreDrawOpaqueRenderables", "fSpectate" )
 
     if IsValid( specEnt ) then
         specEnt:SetNoDraw( false )
