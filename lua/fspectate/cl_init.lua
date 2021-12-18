@@ -13,8 +13,9 @@ local showChams = false
 local showNames = true
 local showPlayerInfo = true
 local showHealth = true
-local showBeams = true
+local showBeams = false
 local showRank = false
+local showCrosshair = true
 
 --[[-------------------------------------------------------------------------
 Retrieve the current spectated player
@@ -68,10 +69,11 @@ local function toggleSettingsMenu()
 
     addCheckbox( settingsMenu, "Enable aimlines", function( val ) showBeams = val end, showBeams )
     addCheckbox( settingsMenu, "Enable X-Ray", function( val ) showChams = val end, showChams )
+    addCheckbox( settingsMenu, "Enable Crosshair", function( val ) showCrosshair = val end, showCrosshair )
 
-    addLabel( settingsMenu, "Visual:" )
+    addLabel( settingsMenu, "Player info:" )
 
-    addCheckbox( settingsMenu, "Show player info", function( val ) showPlayerInfo = val end, showPlayerInfo )
+    addCheckbox( settingsMenu, "Enable player info", function( val ) showPlayerInfo = val end, showPlayerInfo )
     addCheckbox( settingsMenu, "Show player names", function( val ) showNames = val end, showNames )
     addCheckbox( settingsMenu, "Show player health", function( val ) showHealth = val end, showHealth )
     addCheckbox( settingsMenu, "Show player rank", function( val ) showRank = val end, showRank )
@@ -212,7 +214,7 @@ local chamsmat1 = CreateMaterial( "CHAMSMATFSPEC1", "VertexLitGeneric", {["$base
 local chamsmat2 = CreateMaterial( "CHAMSMATFSPEC2", "VertexLitGeneric", {["$basetexture"] = "models/debug/debugwhite", ["$model"] = 1, ["$ignorez"] = 0} )
 local function drawCham( ply )
     if not ply:Alive() then return end
-    if ply == LocalPlayer() then return end
+    if ply == specEnt and not thirdperson then return end
 
     local col = team.GetColor( ply:Team() )
     cam.Start3D();
@@ -513,6 +515,22 @@ local function drawHelp()
 end
 
 --[[---------------------------------------------------------------------------
+Draws a crosshair
+---------------------------------------------------------------------------]]
+local function drawCrosshair()
+    if not showCrosshair then return end
+    local h = ScrH() / 2
+    local w = ScrW() / 2 - 1 -- -1 to make it exactly match with the hl2 crosshair.
+
+    surface.SetDrawColor( 0, 0, 0, 255 )
+    surface.DrawLine( w + 1, h + 10, w + 1, h - 10 )
+    surface.DrawLine( w + 10, h + 1, w - 10, h + 1 )
+    surface.SetDrawColor( 255, 255, 255, 255 )
+    surface.DrawLine( w + 10, h, w - 10, h )
+    surface.DrawLine( w, h + 10, w, h - 10 )
+end
+
+--[[---------------------------------------------------------------------------
 Start roaming free, rather than spectating a given player
 ---------------------------------------------------------------------------]]
 startFreeRoam = function()
@@ -547,7 +565,8 @@ local function startSpectate()
     hook.Add( "PlayerBindPress", "fSpectate", specBinds )
     hook.Add( "ShouldDrawLocalPlayer", "fSpectate", function() return isRoaming or thirdperson end )
     hook.Add( "Think", "fSpectate", specThink )
-    hook.Add( "HUDPaint", "fSpectate", drawHelp )
+    hook.Add( "HUDPaint", "fSpectateHelp", drawHelp )
+    hook.Add( "HUDPaint", "fSpectateCrosshair", drawCrosshair )
     hook.Add( "FAdmin_ShowFAdminMenu", "fSpectate", fadminmenushow )
     hook.Add( "RenderScreenspaceEffects", "fSpectate", lookingLines )
     hook.Add( "PostDrawOpaqueRenderables", "fSpectate", drawChams )
@@ -569,7 +588,8 @@ stopSpectating = function()
     hook.Remove( "PlayerBindPress", "fSpectate" )
     hook.Remove( "ShouldDrawLocalPlayer", "fSpectate" )
     hook.Remove( "Think", "fSpectate" )
-    hook.Remove( "HUDPaint", "fSpectate" )
+    hook.Remove( "HUDPaint", "fSpectateHelp" )
+    hook.Remove( "HUDPaint", "fSpectateCrosshair" )
     hook.Remove( "FAdmin_ShowFAdminMenu", "fSpectate" )
     hook.Remove( "RenderScreenspaceEffects", "fSpectate" )
     hook.Remove( "PostDrawOpaqueRenderables", "fSpectate" )
