@@ -525,7 +525,7 @@ local function drawCrosshair()
     surface.SetDrawColor( 0, 0, 0, 255 )
     surface.DrawLine( w + 1, h + 10, w + 1, h - 10 )
     surface.DrawLine( w + 10, h + 1, w - 10, h + 1 )
-    surface.SetDrawColor( 255, 255, 255, 255 )
+    surface.SetDrawColor( 0, 255, 0, 255 )
     surface.DrawLine( w + 10, h, w - 10, h )
     surface.DrawLine( w, h + 10, w, h - 10 )
 end
