@@ -18,12 +18,20 @@ local showRank = false
 local showCrosshair = true
 local showWeaponName = true
 
+-- Localized functions
+local isValid = IsValid
+local teamGetColor = team.GetColor
+local setColorModulation = render.SetColorModulation
+local materialOverride = render.MaterialOverride
+local cam_Start3D = cam.Start3D
+local cam_End3D = cam.End3D
+
 --[[-------------------------------------------------------------------------
 Retrieve the current spectated player
 ---------------------------------------------------------------------------]]
 function fSpectate.getSpecEnt()
     if isSpectating and not isRoaming then
-        return IsValid( specEnt ) and specEnt or nil
+        return isValid( specEnt ) and specEnt or nil
     else
         return nil
     end
@@ -65,7 +73,7 @@ local function addLabel( panel, text )
 end
 
 local function toggleSettingsMenu()
-    if IsValid( settingsMenu ) then
+    if isValid( settingsMenu ) then
         settingsMenu:Remove()
         return
     end
@@ -127,7 +135,7 @@ hook.Add( "Initialize", "fSpectate", function()
 
         -- Right click option
         FAdmin.ScoreBoard.Main.AddPlayerRightClick( "Spectate", function( ply )
-            if not IsValid( ply ) then return end
+            if not isValid( ply ) then return end
             RunConsoleCommand( "fspectate", ply:UserID() )
         end )
 
@@ -147,7 +155,7 @@ hook.Add( "Initialize", "fSpectate", function()
 
             return canSpectate and ply ~= LocalPlayer()
         end, function( ply )
-            if not IsValid( ply ) then return end
+            if not isValid( ply ) then return end
             RunConsoleCommand( "fspectate", ply:UserID() )
         end )
     end
@@ -205,7 +213,7 @@ specCalcView
 Override the view for the player to look through the spectated player's eyes
 ---------------------------------------------------------------------------]]
 local function specCalcView()
-    if not IsValid( specEnt ) and not isRoaming then
+    if not isValid( specEnt ) and not isRoaming then
         startFreeRoam()
 
         return
@@ -213,7 +221,7 @@ local function specCalcView()
 
     view = getCalcView()
 
-    if IsValid( specEnt ) then
+    if isValid( specEnt ) then
         specEnt:SetNoDraw( not thirdperson )
     end
 
@@ -225,12 +233,6 @@ Chams drawing code
 ---------------------------------------------------------------------------]]
 local chamsmat1 = CreateMaterial( "CHAMSMATFSPEC1", "VertexLitGeneric", {["$basetexture"] = "models/debug/debugwhite", ["$model"] = 1, ["$ignorez"] = 1} )
 local chamsmat2 = CreateMaterial( "CHAMSMATFSPEC2", "VertexLitGeneric", {["$basetexture"] = "models/debug/debugwhite", ["$model"] = 1, ["$ignorez"] = 0} )
-
-local teamGetColor = team.GetColor
-local start3D = cam.Start3D
-local setColorModulation = render.SetColorModulation
-local materialOverride = render.MaterialOverride
-local end3D = cam.End3D
 
 local function drawCham( ply )
     if not ply:Alive() then return end
@@ -244,7 +246,7 @@ local function drawCham( ply )
 
     local r, g, b = col:Unpack()
 
-    start3D();
+    cam_Start3D();
         setColorModulation( r / 1000, g / 1000, b / 1000 )
         materialOverride( chamsmat1 )
 
@@ -255,7 +257,7 @@ local function drawCham( ply )
 
         ply:DrawModel()
         materialOverride()
-    end3D();
+    cam_End3D();
 end
 
 local function drawChams()
@@ -270,14 +272,14 @@ Find the right player to spectate
 ---------------------------------------------------------------------------]]
 local function findNearestObject()
     local aimvec = LocalPlayer():GetAimVector()
-    local fromPos = not isRoaming and IsValid( specEnt ) and specEnt:EyePos() or roamPos
+    local fromPos = not isRoaming and isValid( specEnt ) and specEnt:EyePos() or roamPos
     local lookingAt = util.QuickTrace( fromPos, aimvec * 5000, LocalPlayer() )
     local ent = lookingAt.Entity
-    if IsValid( ent ) then return ent end
+    if isValid( ent ) then return ent end
     local foundPly, foundDot = nil, 0
 
     for _, ply in ipairs( player.GetAll() ) do
-        if not IsValid( ply ) or ply == LocalPlayer() then continue end
+        if not isValid( ply ) or ply == LocalPlayer() then continue end
         local pos = ply:GetShootPos()
         local dot = ( pos - fromPos ):GetNormalized():Dot( aimvec )
         -- Discard players you're not looking at
@@ -297,7 +299,7 @@ Spectate the person you're looking at while you're roaming
 ---------------------------------------------------------------------------]]
 local function spectateLookingAt()
     local obj = findNearestObject()
-    if not IsValid( obj ) then return end
+    if not isValid( obj ) then return end
     isRoaming = false
     specEnt = obj
 
@@ -367,7 +369,7 @@ Set to main view when roaming, open on a player when spectating
 local function fadminmenushow()
     if isRoaming then
         FAdmin.ScoreBoard.ChangeView( "Main" )
-    elseif IsValid( specEnt ) and specEnt:IsPlayer() then
+    elseif isValid( specEnt ) and specEnt:IsPlayer() then
         FAdmin.ScoreBoard.ChangeView( "Main" )
         FAdmin.ScoreBoard.ChangeView( "Player", specEnt )
     end
@@ -384,13 +386,13 @@ local function lookingLines()
     if not linesToDraw[0] then return end
     if not showBeams then return end
     render.SetMaterial( lineMat )
-    start3D( view.origin, view.angles )
+    cam_Start3D( view.origin, view.angles )
 
     for i = 0, #linesToDraw, 3 do
         render.DrawBeam( linesToDraw[i], linesToDraw[i + 1], 4, 0.01, 10, linesToDraw[i + 2] )
     end
 
-    end3D()
+    cam_End3D()
 end
 
 --[[--------------------------------------------------------------------------
@@ -399,7 +401,7 @@ Gets the position of a player's gun
 --------------------------------------------------------------------------]]
 local function gunpos( ply )
     local wep = ply:GetActiveWeapon()
-    if not IsValid( wep ) then return ply:EyePos() end
+    if not isValid( wep ) then return ply:EyePos() end
     local att = wep:GetAttachment( 1 )
     if not att then return ply:EyePos() end
 
@@ -419,7 +421,7 @@ local function specThink()
 
     for i = 0, #pls - 1 do
         local p = pls[i + 1]
-        if not IsValid( p ) then continue end
+        if not isValid( p ) then continue end
 
         if not isRoaming and p == specEnt and not thirdperson then
             skip = skip + 3
@@ -486,7 +488,7 @@ local function drawHelp()
     draw.WordBox( 2, 10, scrHalfH + 40, "Jump: Stop spectating", "UiBold", uiBackground, uiForeground )
     draw.WordBox( 2, 10, scrHalfH + 60, "Use: Open the settings menu", "UiBold", uiBackground, uiForeground )
 
-    if not isRoaming and IsValid( specEnt ) then
+    if not isRoaming and isValid( specEnt ) then
         if specEnt:IsPlayer() then
             draw.WordBox( 2, 10, scrHalfH + 80, "Spectating: ", "UiBold", uiBackground, uiForeground )
             draw.WordBox( 2, 101, scrHalfH + 80, specEnt:Nick() .. " " .. specEnt:SteamID(), "UiBold", uiBackground, team.GetColor( specEnt:Team() ) )
@@ -509,7 +511,7 @@ local function drawHelp()
     if showPlayerInfo then
         for i = 1, #pls do
             local ply = pls[i]
-            if not IsValid( ply ) then continue end
+            if not isValid( ply ) then continue end
             if not isRoaming and ply == specEnt then continue end
             local pos = ply:GetShootPos():ToScreen()
             if not pos.visible then continue end
@@ -534,7 +536,7 @@ local function drawHelp()
                 draw.WordBox( 2, x, yAlign, ply:GetUserGroup(), "UiBold", uiBackground, uiForeground )
             end
 
-            if showWeaponName and ply:GetActiveWeapon() then
+            if showWeaponName and isValid( ply:GetActiveWeapon() ) then
                 yAlign = yAlign + 20
                 draw.WordBox( 2, x, yAlign, ply:GetActiveWeapon():GetPrintName(), "UiBold", uiBackground, uiForeground )
             end
@@ -542,7 +544,7 @@ local function drawHelp()
     end
 
     if not isRoaming then return end
-    if not IsValid( target ) then return end
+    if not isValid( target ) then return end
     local center = target:LocalToWorld( target:OBBCenter() )
     local eyeAng = EyeAngles()
     local rightUp = eyeAng:Right() * 16 + eyeAng:Up() * 36
@@ -572,7 +574,7 @@ end
 Start roaming free, rather than spectating a given player
 ---------------------------------------------------------------------------]]
 startFreeRoam = function()
-    if IsValid( specEnt ) and specEnt:IsPlayer() then
+    if isValid( specEnt ) and specEnt:IsPlayer() then
         roamPos = thirdperson and getThirdPersonPos( specEnt ) or specEnt:GetShootPos()
         specEnt:SetNoDraw( false )
     else
@@ -592,7 +594,7 @@ Spectate a player
 local function startSpectate()
     isRoaming = net.ReadBool()
     specEnt = net.ReadEntity()
-    specEnt = IsValid( specEnt ) and specEnt or nil
+    specEnt = isValid( specEnt ) and specEnt or nil
 
     setSpecOwner()
 
@@ -636,7 +638,7 @@ stopSpectating = function()
     hook.Remove( "PostDrawOpaqueRenderables", "fSpectate" )
     timer.Remove( "fSpectatePosUpdate" )
 
-    if IsValid( specEnt ) then
+    if isValid( specEnt ) then
         specEnt:SetNoDraw( false )
     end
 
