@@ -16,6 +16,7 @@ local showHealth = true
 local showBeams = false
 local showRank = false
 local showCrosshair = true
+local showWeaponName = true
 
 --[[-------------------------------------------------------------------------
 Retrieve the current spectated player
@@ -27,6 +28,17 @@ function fSpectate.getSpecEnt()
         return nil
     end
 end
+
+--[[-------------------------------------------------------------------------
+Set the spec owner and checks for cppi
+---------------------------------------------------------------------------]]
+local function setSpecOwner()
+    if not CPPI then return end
+    if specEnt and not specEnt:IsPlayer() then
+        specEntOwner = specEnt:CPPIGetOwner()
+    end
+end
+
 
 --[[-------------------------------------------------------------------------
 VGUI Options menu
@@ -76,6 +88,7 @@ local function toggleSettingsMenu()
     addCheckbox( settingsMenu, "Enable player info", function( val ) showPlayerInfo = val end, showPlayerInfo )
     addCheckbox( settingsMenu, "Show player names", function( val ) showNames = val end, showNames )
     addCheckbox( settingsMenu, "Show player health", function( val ) showHealth = val end, showHealth )
+    addCheckbox( settingsMenu, "Show player current weapon", function( val ) showWeaponName = val end, showWeaponName )
     addCheckbox( settingsMenu, "Show player rank", function( val ) showRank = val end, showRank )
 
     local distanceSlider = vgui.Create( "DNumSlider", settingsMenu )
@@ -287,6 +300,9 @@ local function spectateLookingAt()
     if not IsValid( obj ) then return end
     isRoaming = false
     specEnt = obj
+
+    setSpecOwner()
+
     net.Start( "fSpectateTarget" )
     net.WriteEntity( obj )
     net.SendToServer()
@@ -477,8 +493,8 @@ local function drawHelp()
         else
             draw.WordBox( 2, 10, scrHalfH + 80, "Owner: ", "UiBold", uiBackground, uiForeground )
 
-            if specEnt:CPPIGetOwner() then
-                draw.WordBox( 2, 70, scrHalfH + 80, specEnt:CPPIGetOwner():Nick() .. " " .. specEnt:CPPIGetOwner():SteamID(), "UiBold", uiBackground, team.GetColor( specEnt:CPPIGetOwner():Team() ) )
+            if specEntOwner then
+                draw.WordBox( 2, 70, scrHalfH + 80, specEntOwner:Nick() .. " " .. specEntOwner:SteamID(), "UiBold", uiBackground, team.GetColor( specEntOwner:Team() ) )
             else
                 draw.WordBox( 2, 70, scrHalfH + 80, "World", "UiBold", uiBackground, uiForeground )
             end
@@ -516,6 +532,11 @@ local function drawHelp()
             if showRank then
                 yAlign = yAlign + 20
                 draw.WordBox( 2, x, yAlign, ply:GetUserGroup(), "UiBold", uiBackground, uiForeground )
+            end
+
+            if showWeaponName and ply:GetActiveWeapon() then
+                yAlign = yAlign + 20
+                draw.WordBox( 2, x, yAlign, ply:GetActiveWeapon():GetPrintName(), "UiBold", uiBackground, uiForeground )
             end
         end
     end
@@ -559,6 +580,7 @@ startFreeRoam = function()
     end
 
     specEnt = nil
+    specEntOwner = nil
     isRoaming = true
     keysDown = {}
 end
@@ -571,6 +593,8 @@ local function startSpectate()
     isRoaming = net.ReadBool()
     specEnt = net.ReadEntity()
     specEnt = IsValid( specEnt ) and specEnt or nil
+
+    setSpecOwner()
 
     if isRoaming then
         startFreeRoam()
