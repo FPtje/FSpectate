@@ -533,7 +533,7 @@ local function drawHelp()
             if showHealth then
                 yAlign = yAlign + 20
                 local health = ply:Health()
-                local colorHealth = math.Clamp( health, 0, 100 )
+                local colorHealth = math.Clamp( health, 0, ply:GetMaxHealth() )
                 draw.WordBox( 2, x, yAlign, "Health: " .. health, "UiBold", uiBackground, HSVToColor( colorHealth, 1, 1 ) )
             end
 
