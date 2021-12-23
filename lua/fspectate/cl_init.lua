@@ -492,6 +492,12 @@ local function drawHelp()
         if specEnt:IsPlayer() then
             draw.WordBox( 2, 10, scrHalfH + 80, "Spectating: ", "UiBold", uiBackground, uiForeground )
             draw.WordBox( 2, 101, scrHalfH + 80, specEnt:Nick() .. " " .. specEnt:SteamID(), "UiBold", uiBackground, team.GetColor( specEnt:Team() ) )
+
+            local currentWeapon = specEnt:GetActiveWeapon()
+            if isValid( currentWeapon ) then
+                draw.WordBox( 2, 10, scrHalfH + 100, "Weapon: ", "UiBold", uiBackground, uiForeground )
+                draw.WordBox( 2, 82, scrHalfH + 100, currentWeapon:GetClass(), "UiBold", uiBackground, uiForeground )
+            end
         else
             draw.WordBox( 2, 10, scrHalfH + 80, "Owner: ", "UiBold", uiBackground, uiForeground )
 
@@ -538,7 +544,7 @@ local function drawHelp()
 
             if showWeaponName and isValid( ply:GetActiveWeapon() ) then
                 yAlign = yAlign + 20
-                draw.WordBox( 2, x, yAlign, ply:GetActiveWeapon():GetPrintName(), "UiBold", uiBackground, uiForeground )
+                draw.WordBox( 2, x, yAlign, ply:GetActiveWeapon():GetClass(), "UiBold", uiBackground, uiForeground )
             end
         end
     end
