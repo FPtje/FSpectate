@@ -25,6 +25,7 @@ local setColorModulation = render.SetColorModulation
 local materialOverride = render.MaterialOverride
 local cam_Start3D = cam.Start3D
 local cam_End3D = cam.End3D
+local draw_WordBox = draw.WordBox
 
 --[[-------------------------------------------------------------------------
 Retrieve the current spectated player
@@ -483,35 +484,35 @@ local function drawHelp()
     local target = findNearestObject()
     local pls = player.GetAll()
 
-    draw.WordBox( 2, 10, scrHalfH, "Left click: (Un)select player to spectate", "UiBold", uiBackground, uiForeground )
-    draw.WordBox( 2, 10, scrHalfH + 20, isRoaming and "Right click: quickly move forwards" or "Right click: toggle thirdperson", "UiBold", uiBackground, uiForeground )
-    draw.WordBox( 2, 10, scrHalfH + 40, "Jump: Stop spectating", "UiBold", uiBackground, uiForeground )
-    draw.WordBox( 2, 10, scrHalfH + 60, "Use: Open the settings menu", "UiBold", uiBackground, uiForeground )
+    draw_WordBox( 2, 10, scrHalfH, "Left click: (Un)select player to spectate", "UiBold", uiBackground, uiForeground )
+    draw_WordBox( 2, 10, scrHalfH + 20, isRoaming and "Right click: quickly move forwards" or "Right click: toggle thirdperson", "UiBold", uiBackground, uiForeground )
+    draw_WordBox( 2, 10, scrHalfH + 40, "Jump: Stop spectating", "UiBold", uiBackground, uiForeground )
+    draw_WordBox( 2, 10, scrHalfH + 60, "Use: Open the settings menu", "UiBold", uiBackground, uiForeground )
 
     if not isRoaming and isValid( specEnt ) then
         if specEnt:IsPlayer() then
-            draw.WordBox( 2, 10, scrHalfH + 80, "Spectating: ", "UiBold", uiBackground, uiForeground )
-            draw.WordBox( 2, 101, scrHalfH + 80, specEnt:Nick() .. " " .. specEnt:SteamID(), "UiBold", uiBackground, team.GetColor( specEnt:Team() ) )
+            draw_WordBox( 2, 10, scrHalfH + 80, "Spectating: ", "UiBold", uiBackground, uiForeground )
+            draw_WordBox( 2, 101, scrHalfH + 80, specEnt:Nick() .. " " .. specEnt:SteamID(), "UiBold", uiBackground, team.GetColor( specEnt:Team() ) )
 
             local currentWeapon = specEnt:GetActiveWeapon()
             if isValid( currentWeapon ) then
-                draw.WordBox( 2, 10, scrHalfH + 100, "Weapon: ", "UiBold", uiBackground, uiForeground )
-                draw.WordBox( 2, 82, scrHalfH + 100, currentWeapon:GetClass(), "UiBold", uiBackground, uiForeground )
+                draw_WordBox( 2, 10, scrHalfH + 100, "Weapon: ", "UiBold", uiBackground, uiForeground )
+                draw_WordBox( 2, 82, scrHalfH + 100, currentWeapon:GetClass(), "UiBold", uiBackground, uiForeground )
             end
         else
-            draw.WordBox( 2, 10, scrHalfH + 80, "Owner: ", "UiBold", uiBackground, uiForeground )
+            draw_WordBox( 2, 10, scrHalfH + 80, "Owner: ", "UiBold", uiBackground, uiForeground )
 
             if specEntOwner then
-                draw.WordBox( 2, 70, scrHalfH + 80, specEntOwner:Nick() .. " " .. specEntOwner:SteamID(), "UiBold", uiBackground, team.GetColor( specEntOwner:Team() ) )
+                draw_WordBox( 2, 70, scrHalfH + 80, specEntOwner:Nick() .. " " .. specEntOwner:SteamID(), "UiBold", uiBackground, team.GetColor( specEntOwner:Team() ) )
             else
-                draw.WordBox( 2, 70, scrHalfH + 80, "World", "UiBold", uiBackground, uiForeground )
+                draw_WordBox( 2, 70, scrHalfH + 80, "World", "UiBold", uiBackground, uiForeground )
             end
         end
     end
 
     if FAdmin then
-        draw.WordBox( 2, 10, scrHalfH + 80, "Opening FAdmin's menu while spectating a player", "UiBold", uiBackground, uiForeground )
-        draw.WordBox( 2, 10, scrHalfH + 100, "\twill open their page!", "UiBold", uiBackground, uiForeground )
+        draw_WordBox( 2, 10, scrHalfH + 80, "Opening FAdmin's menu while spectating a player", "UiBold", uiBackground, uiForeground )
+        draw_WordBox( 2, 10, scrHalfH + 100, "\twill open their page!", "UiBold", uiBackground, uiForeground )
     end
 
     if showPlayerInfo then
@@ -527,24 +528,24 @@ local function drawHelp()
 
             if showNames then
                 yAlign = yAlign + 20
-                draw.WordBox( 2, x, yAlign, ply:Nick(), "UiBold", uiBackground, team.GetColor( ply:Team() ) )
+                draw_WordBox( 2, x, yAlign, ply:Nick(), "UiBold", uiBackground, team.GetColor( ply:Team() ) )
             end
 
             if showHealth then
                 yAlign = yAlign + 20
                 local health = ply:Health()
                 local colorHealth = math.Clamp( health, 0, ply:GetMaxHealth() )
-                draw.WordBox( 2, x, yAlign, "Health: " .. health, "UiBold", uiBackground, HSVToColor( colorHealth, 1, 1 ) )
+                draw_WordBox( 2, x, yAlign, "Health: " .. health, "UiBold", uiBackground, HSVToColor( colorHealth, 1, 1 ) )
             end
 
             if showRank then
                 yAlign = yAlign + 20
-                draw.WordBox( 2, x, yAlign, ply:GetUserGroup(), "UiBold", uiBackground, uiForeground )
+                draw_WordBox( 2, x, yAlign, ply:GetUserGroup(), "UiBold", uiBackground, uiForeground )
             end
 
             if showWeaponName and isValid( ply:GetActiveWeapon() ) then
                 yAlign = yAlign + 20
-                draw.WordBox( 2, x, yAlign, ply:GetActiveWeapon():GetClass(), "UiBold", uiBackground, uiForeground )
+                draw_WordBox( 2, x, yAlign, ply:GetActiveWeapon():GetClass(), "UiBold", uiBackground, uiForeground )
             end
         end
     end
@@ -557,7 +558,7 @@ local function drawHelp()
     local topRight = ( center + rightUp ):ToScreen()
     local bottomLeft = ( center - rightUp ):ToScreen()
     draw.RoundedBox( 12, bottomLeft.x, bottomLeft.y, math.max( 20, topRight.x - bottomLeft.x ), topRight.y - bottomLeft.y, red )
-    draw.WordBox( 2, bottomLeft.x, bottomLeft.y + 12, "Left click to spectate!", "UiBold", uiBackground, uiForeground )
+    draw_WordBox( 2, bottomLeft.x, bottomLeft.y + 12, "Left click to spectate!", "UiBold", uiBackground, uiForeground )
 end
 
 --[[---------------------------------------------------------------------------
