@@ -227,10 +227,10 @@ local chamsmat1 = CreateMaterial( "CHAMSMATFSPEC1", "VertexLitGeneric", {["$base
 local chamsmat2 = CreateMaterial( "CHAMSMATFSPEC2", "VertexLitGeneric", {["$basetexture"] = "models/debug/debugwhite", ["$model"] = 1, ["$ignorez"] = 0} )
 
 local teamGetColor = team.GetColor
-local Start3D = cam.Start3D
-local SetColorModulation = render.SetColorModulation
-local MaterialOverride = render.MaterialOverride
-local End3D = cam.End3D
+local start3D = cam.Start3D
+local setColorModulation = render.SetColorModulation
+local materialOverride = render.MaterialOverride
+local end3D = cam.End3D
 
 local function drawCham( ply )
     if not ply:Alive() then return end
@@ -244,18 +244,18 @@ local function drawCham( ply )
 
     local r, g, b = col:Unpack()
 
-    Start3D();
-        SetColorModulation( r / 1000, g / 1000, b / 1000 )
-        MaterialOverride( chamsmat1 )
+    start3D();
+        setColorModulation( r / 1000, g / 1000, b / 1000 )
+        materialOverride( chamsmat1 )
 
         ply:DrawModel()
 
-        SetColorModulation( r / 255, g / 255, b / 255 )
-        MaterialOverride( chamsmat2 )
+        setColorModulation( r / 255, g / 255, b / 255 )
+        materialOverride( chamsmat2 )
 
         ply:DrawModel()
-        MaterialOverride()
-    End3D();
+        materialOverride()
+    end3D();
 end
 
 local function drawChams()
@@ -384,13 +384,13 @@ local function lookingLines()
     if not linesToDraw[0] then return end
     if not showBeams then return end
     render.SetMaterial( lineMat )
-    cam.Start3D( view.origin, view.angles )
+    start3D( view.origin, view.angles )
 
     for i = 0, #linesToDraw, 3 do
         render.DrawBeam( linesToDraw[i], linesToDraw[i + 1], 4, 0.01, 10, linesToDraw[i + 2] )
     end
 
-    cam.End3D()
+    end3D()
 end
 
 --[[--------------------------------------------------------------------------
