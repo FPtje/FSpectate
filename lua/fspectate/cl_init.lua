@@ -212,20 +212,37 @@ Chams drawing code
 ---------------------------------------------------------------------------]]
 local chamsmat1 = CreateMaterial( "CHAMSMATFSPEC1", "VertexLitGeneric", {["$basetexture"] = "models/debug/debugwhite", ["$model"] = 1, ["$ignorez"] = 1} )
 local chamsmat2 = CreateMaterial( "CHAMSMATFSPEC2", "VertexLitGeneric", {["$basetexture"] = "models/debug/debugwhite", ["$model"] = 1, ["$ignorez"] = 0} )
+
+local teamGetColor = team.GetColor
+local Start3D = cam.Start3D
+local SetColorModulation = render.SetColorModulation
+local MaterialOverride = render.MaterialOverride
+local End3D = cam.End3D
+
 local function drawCham( ply )
     if not ply:Alive() then return end
     if ply == specEnt and not thirdperson then return end
 
-    local col = team.GetColor( ply:Team() )
-    cam.Start3D();
-        render.SetColorModulation( col.r / 1000, col.g / 1000, col.b / 1000 )
-        render.MaterialOverride( chamsmat1 )
+    local col = ply._teamColor
+    if not col then
+        col = teamGetColor( ply:Team() )
+        ply._teamColor = col
+    end
+
+    local r, g, b = col:Unpack()
+
+    Start3D();
+        SetColorModulation( r / 1000, g / 1000, b / 1000 )
+        MaterialOverride( chamsmat1 )
+
         ply:DrawModel()
-        render.SetColorModulation( col.r / 255, col.g / 255, col.b / 255 )
-        render.MaterialOverride( chamsmat2 )
+
+        SetColorModulation( r / 255, g / 255, b / 255 )
+        MaterialOverride( chamsmat2 )
+
         ply:DrawModel()
-        render.MaterialOverride()
-    cam.End3D();
+        MaterialOverride()
+    End3D();
 end
 
 local function drawChams()
