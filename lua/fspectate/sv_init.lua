@@ -121,6 +121,7 @@ net.Receive( "fSpectateTarget", function( _, ply )
 end )
 
 local function TPToPos( ply, _, args )
+    if GAMEMODE_NAME == "terrortown" then return end
     CAMI.PlayerHasAccess( ply, "fSpectateTeleport", function( b, _ )
         if not b then
             ply:ChatPrint( "No Access!" )
