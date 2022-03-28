@@ -10,13 +10,13 @@ local roamVelocity = Vector( 0 )
 -- Customizable vars
 local thirdPersonDistance = 100
 local showChams = false
-local showNames = true
 local showPlayerInfo = true
-local showHealth = true
+local showNames = true
+local showHealth = false
 local showBeams = false
 local showRank = false
 local showCrosshair = true
-local showWeaponName = true
+local showWeaponName = false
 
 -- Localized functions
 local isValid = IsValid
