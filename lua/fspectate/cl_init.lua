@@ -11,6 +11,8 @@ local roamVelocity = Vector( 0 )
 local thirdPersonDistance = 100
 local showChams = false
 local showPlayerInfo = true
+local showE2s = false
+local showSFs = false
 local showNames = true
 local showHealth = false
 local showBeams = false
@@ -48,6 +50,21 @@ local function setSpecOwner()
     end
 end
 
+--[[-------------------------------------------------------------------------
+Finds a player entity by name
+---------------------------------------------------------------------------]]
+local function findByPlayer( name )
+    if not name or name == "" then return nil end
+    local players = player.GetAll()
+
+    for _, ply in ipairs( players ) do
+        if tonumber( name ) == ply:UserID() then return ply end
+        if name == ply:SteamID() then return ply end
+        if string.find( string.lower( ply:Nick() ), string.lower( tostring( name ) ), 1, true ) ~= nil then return ply end
+    end
+
+    return nil
+end
 
 --[[-------------------------------------------------------------------------
 VGUI Options menu
@@ -99,6 +116,16 @@ local function toggleSettingsMenu()
     addCheckbox( settingsMenu, "Show player health", function( val ) showHealth = val end, showHealth )
     addCheckbox( settingsMenu, "Show player current weapon", function( val ) showWeaponName = val end, showWeaponName )
     addCheckbox( settingsMenu, "Show player rank", function( val ) showRank = val end, showRank )
+
+    addLabel( settingsMenu, "Miscellaneous:" )
+
+    if WireLib then
+        addCheckbox( settingsMenu, "Show E2 chips", function( val ) showE2s = val end, showE2s )
+    end
+
+    if SF then
+        addCheckbox( settingsMenu, "Show SF rank", function( val ) showSFs = val end, showSFs )
+    end
 
     local distanceSlider = vgui.Create( "DNumSlider", settingsMenu )
     distanceSlider:Dock( TOP )
@@ -232,8 +259,8 @@ end
 --[[-------------------------------------------------------------------------
 Chams drawing code
 ---------------------------------------------------------------------------]]
-local chamsmat1 = CreateMaterial( "CHAMSMATFSPEC1", "VertexLitGeneric", {["$basetexture"] = "models/debug/debugwhite", ["$model"] = 1, ["$ignorez"] = 1} )
-local chamsmat2 = CreateMaterial( "CHAMSMATFSPEC2", "VertexLitGeneric", {["$basetexture"] = "models/debug/debugwhite", ["$model"] = 1, ["$ignorez"] = 0} )
+local chamsmat1 = CreateMaterial( "CHAMSMATFSPEC1", "VertexLitGeneric", { ["$basetexture"] = "models/debug/debugwhite", ["$model"] = 1, ["$ignorez"] = 1 } )
+local chamsmat2 = CreateMaterial( "CHAMSMATFSPEC2", "VertexLitGeneric", { ["$basetexture"] = "models/debug/debugwhite", ["$model"] = 1, ["$ignorez"] = 0 } )
 
 local function drawCham( ply )
     if not ply:Alive() then return end
@@ -489,10 +516,36 @@ local function drawHelp()
     draw_WordBox( 2, 10, scrHalfH + 40, "Jump: Stop spectating", "UiBold", uiBackground, uiForeground )
     draw_WordBox( 2, 10, scrHalfH + 60, "Use: Open the settings menu", "UiBold", uiBackground, uiForeground )
 
+    if showE2s then
+        local e2s = ents.FindByClass( "gmod_wire_expression2" )
+        for _, e2 in ipairs( e2s ) do
+            local name = e2.name or "generic"
+            local owner = e2:CPPIGetOwner()
+            local pos = e2:GetPos():ToScreen()
+
+            draw_WordBox( 2, pos.x, pos.y, "E2: " .. name .. " (" .. owner:GetName() .. ")", "UiBold", uiBackground, uiForeground )
+        end
+    end
+
+    if showSFs then
+        local sfs = ents.FindByClass( "starfall_processor" )
+        for _, sf in ipairs( sfs ) do
+            local name = sf.name
+            local owner = sf.owner
+            local pos = sf:GetPos():ToScreen()
+
+            if name == "" then name = "Generic" end
+
+            draw_WordBox( 2, pos.x, pos.y, "SF: " .. name .. " (" .. owner:GetName() .. ")", "UiBold", uiBackground, uiForeground )
+        end
+    end
+
     if not isRoaming and isValid( specEnt ) then
         if specEnt:IsPlayer() then
             draw_WordBox( 2, 10, scrHalfH + 80, "Spectating: ", "UiBold", uiBackground, uiForeground )
-            draw_WordBox( 2, 101, scrHalfH + 80, specEnt:Nick() .. " " .. specEnt:SteamID(), "UiBold", uiBackground, team.GetColor( specEnt:Team() ) )
+            local steamId = specEnt:SteamID()
+            if steamId == "NULL" then steamId = "BOT" end
+            draw_WordBox( 2, 101, scrHalfH + 80, specEnt:Nick() .. " " .. steamId, "UiBold", uiBackground, team.GetColor( specEnt:Team() ) )
 
             local currentWeapon = specEnt:GetActiveWeapon()
             if isValid( currentWeapon ) then
@@ -598,9 +651,9 @@ end
 specEnt
 Spectate a player
 ---------------------------------------------------------------------------]]
-local function startSpectate()
-    isRoaming = net.ReadBool()
-    specEnt = net.ReadEntity()
+local function startSpectate( roaming, ent )
+    isRoaming = roaming
+    specEnt = ent
     specEnt = isValid( specEnt ) and specEnt or nil
 
     setSpecOwner()
@@ -627,7 +680,11 @@ local function startSpectate()
     end )
 end
 
-net.Receive( "fSpectate", startSpectate )
+local function receiveNetSpectate()
+    startSpectate( net.ReadBool(), net.ReadEntity() )
+end
+
+net.Receive( "fSpectate", receiveNetSpectate )
 
 --[[---------------------------------------------------------------------------
 stopSpectating
@@ -652,3 +709,52 @@ stopSpectating = function()
     RunConsoleCommand( "fSpectate_StopSpectating" )
     isSpectating = false
 end
+
+--[[---------------------------------------------------------------------------
+Adds the fspectate console command and allows it to be used when the server is down.
+---------------------------------------------------------------------------]]
+local function handleSpectateRequest( _, _, args )
+    local timingOut, timeoutTime = GetTimeoutInfo()
+    local playerName = args[1] or ""
+
+    if not timingOut and timeoutTime < 2 then
+        net.Start( "fSpectateName" )
+        net.WriteString( playerName )
+        net.SendToServer()
+        return
+    end
+
+    CAMI.PlayerHasAccess( LocalPlayer(), "fSpectate", function( access )
+        if not access then
+            return LocalPlayer():ChatPrint( "No Access!" )
+        end
+
+        local foundPlayer = findByPlayer( playerName )
+
+        if foundPlayer == LocalPlayer() then
+            return LocalPlayer():ChatPrint( "Invalid target!" )
+        end
+
+        startSpectate( false, foundPlayer )
+    end )
+end
+
+local function autoComplete( _, stringargs )
+    stringargs = string.Trim( stringargs ) -- Remove any spaces before or after.
+    stringargs = string.lower( stringargs )
+    local tbl = {}
+
+    for _, v in ipairs( player.GetAll() ) do
+        local nick = v:Nick()
+
+        if string.find( string.lower( nick ), stringargs ) then
+            nick = "\"" .. nick .. "\"" -- We put quotes around it in case players have spaces in their names.
+            nick = "fspectate " .. nick -- We also need to put the cmd before for it to work properly.
+            table.insert( tbl, nick )
+        end
+    end
+
+    return tbl
+end
+
+concommand.Add( "fspectate", handleSpectateRequest, autoComplete )

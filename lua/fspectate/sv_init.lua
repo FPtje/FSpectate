@@ -1,5 +1,6 @@
 util.AddNetworkString( "fSpectate" )
 util.AddNetworkString( "fSpectateTarget" )
+util.AddNetworkString( "fSpectateName" )
 
 local function findPlayer( info )
     if not info or info == "" then return nil end
@@ -88,25 +89,9 @@ local function Spectate( ply, _, args )
     end )
 end
 
-local function autoComplete( _, stringargs )
-    stringargs = string.Trim( stringargs ) -- Remove any spaces before or after.
-    stringargs = string.lower( stringargs )
-    local tbl = {}
-
-    for _, v in ipairs( player.GetAll() ) do
-        local nick = v:Nick()
-
-        if string.find( string.lower( nick ), stringargs ) then
-            nick = "\"" .. nick .. "\"" -- We put quotes around it in case players have spaces in their names.
-            nick = "fSpectate " .. nick -- We also need to put the cmd before for it to work properly.
-            table.insert( tbl, nick )
-        end
-    end
-
-    return tbl
-end
-
-concommand.Add( "fspectate", Spectate, autoComplete )
+net.Receive( "fSpectateName", function( _, ply )
+    Spectate( ply, _, { net.ReadString() } )
+end )
 
 net.Receive( "fSpectateTarget", function( _, ply )
     CAMI.PlayerHasAccess( ply, "fSpectate", function( b, _ )
