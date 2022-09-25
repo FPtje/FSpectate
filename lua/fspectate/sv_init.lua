@@ -193,7 +193,7 @@ local function playerVoice( listener, talker )
     return canHear, surround
 end
 
-hook.Add( "PlayerCanHearPlayersVoice", "fSpectate", playerVoice )
+hook.Add( "PlayerCanHearPlayersVoice", "fSpectate", playerVoice, HOOK_HIGH )
 
 local function playerSay( talker, message )
     local split = string.Explode( " ", message )
