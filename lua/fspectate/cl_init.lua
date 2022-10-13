@@ -29,6 +29,28 @@ local cam_Start3D = cam.Start3D
 local cam_End3D = cam.End3D
 local draw_WordBox = draw.WordBox
 
+-- set up convars for customization
+local convarTable = {
+    aimlines = { default = 1, func = function( val ) showBeams = val end },
+    xray = { default = 0, func = function( val ) showChams = val end },
+    crosshair = { default = 1, func = function( val ) showCrosshair = val end },
+    playerinfo = { default = 1, func = function( val ) showPlayerInfo = val end },
+    names = { default = 1, func = function( val ) showNames = val end },
+    health = { default = 0, func = function( val ) showHealth = val end },
+    weapon = { default = 0, func = function( val ) showWeaponName = val end },
+    rank = { default = 0, func = function( val ) showRank = val end },
+    e2s = { default = 0, func = function( val ) showE2s = val end },
+    sfs = { default = 0, func = function( val ) showSFs = val end },
+}
+
+for convarname, tbl in pairs( convarTable ) do
+    local convarString = "fspectate_" .. convarname
+    CreateClientConVar( convarString, tbl.default and 1 or 0, true, true )
+    cvars.AddChangeCallback( convarString, function( _, _, new )
+        tbl.func( tobool( new ) )
+    end )
+end
+
 --[[-------------------------------------------------------------------------
 Retrieve the current spectated player
 ---------------------------------------------------------------------------]]
@@ -71,16 +93,16 @@ VGUI Options menu
 ---------------------------------------------------------------------------]]
 local settingsMenu
 
-local function addCheckbox( panel, text, valchanger, default )
+local function addCheckbox( panel, fancyText, convarname )
+    local convarString = "fspectate_" .. convarname
+    local convar = GetConVar( convarString )
     local checkBox = panel:Add( "DCheckBoxLabel" )
     checkBox:Dock( TOP )
+    checkBox:SetConVar( convarString )
     checkBox:DockMargin( 10, 0, 0, 5 )
-    checkBox:SetText( text )
-    checkBox:SetValue( default )
+    checkBox:SetText( fancyText )
+    checkBox:SetValue( convar:GetBool() )
     checkBox:SizeToContents()
-    function checkBox:OnChange( bool )
-        valchanger( bool )
-    end
 end
 
 local function addLabel( panel, text )
@@ -105,26 +127,26 @@ local function toggleSettingsMenu()
 
     addLabel( settingsMenu, "Functional:" )
 
-    addCheckbox( settingsMenu, "Enable aimlines", function( val ) showBeams = val end, showBeams )
-    addCheckbox( settingsMenu, "Enable X-Ray", function( val ) showChams = val end, showChams )
-    addCheckbox( settingsMenu, "Enable Crosshair", function( val ) showCrosshair = val end, showCrosshair )
+    addCheckbox( settingsMenu, "Enable aimlines", "aimlines" )
+    addCheckbox( settingsMenu, "Enable X-Ray", "xray" )
+    addCheckbox( settingsMenu, "Enable Crosshair", "crosshair" )
 
     addLabel( settingsMenu, "Player info:" )
 
-    addCheckbox( settingsMenu, "Enable player info", function( val ) showPlayerInfo = val end, showPlayerInfo )
-    addCheckbox( settingsMenu, "Show player names", function( val ) showNames = val end, showNames )
-    addCheckbox( settingsMenu, "Show player health", function( val ) showHealth = val end, showHealth )
-    addCheckbox( settingsMenu, "Show player current weapon", function( val ) showWeaponName = val end, showWeaponName )
-    addCheckbox( settingsMenu, "Show player rank", function( val ) showRank = val end, showRank )
+    addCheckbox( settingsMenu, "Enable player info", "playerinfo" )
+    addCheckbox( settingsMenu, "Show player names", "names" )
+    addCheckbox( settingsMenu, "Show player health", "health" )
+    addCheckbox( settingsMenu, "Show player current weapon", "weapon" )
+    addCheckbox( settingsMenu, "Show player rank", "rank" )
 
     addLabel( settingsMenu, "Miscellaneous:" )
 
     if WireLib then
-        addCheckbox( settingsMenu, "Show E2 chips", function( val ) showE2s = val end, showE2s )
+        addCheckbox( settingsMenu, "Show E2 chips", "e2s" )
     end
 
     if SF then
-        addCheckbox( settingsMenu, "Show SF rank", function( val ) showSFs = val end, showSFs )
+        addCheckbox( settingsMenu, "Show SF rank", "sfs" )
     end
 
     local distanceSlider = vgui.Create( "DNumSlider", settingsMenu )
@@ -533,11 +555,12 @@ local function drawHelp()
         for _, sf in ipairs( sfs ) do
             local name = sf.name
             local owner = sf.owner
+            local ownerName = owner:GetName() or "unknown"
             local pos = sf:GetPos():ToScreen()
 
             if name == "" then name = "Generic" end
 
-            draw_WordBox( 2, pos.x, pos.y, "SF: " .. name .. " (" .. owner:GetName() .. ")", "UiBold", uiBackground, uiForeground )
+            draw_WordBox( 2, pos.x, pos.y, "SF: " .. name .. " (" .. ownerName .. ")", "UiBold", uiBackground, uiForeground )
         end
     end
 
