@@ -514,7 +514,8 @@ local function drawHelp()
     draw_WordBox( 2, 10, scrHalfH, "Left click: (Un)select player to spectate", "UiBold", uiBackground, uiForeground )
     draw_WordBox( 2, 10, scrHalfH + 20, isRoaming and "Right click: quickly move forwards" or "Right click: toggle thirdperson", "UiBold", uiBackground, uiForeground )
     draw_WordBox( 2, 10, scrHalfH + 40, "Jump: Stop spectating", "UiBold", uiBackground, uiForeground )
-    draw_WordBox( 2, 10, scrHalfH + 60, "Use: Open the settings menu", "UiBold", uiBackground, uiForeground )
+    draw_WordBox( 2, 10, scrHalfH + 60, "Reload: Teleport to your current camera position.", "UiBold", uiBackground, uiForeground )
+    draw_WordBox( 2, 10, scrHalfH + 80, "Use: Open the settings menu", "UiBold", uiBackground, uiForeground )
 
     if showE2s then
         local e2s = ents.FindByClass( "gmod_wire_expression2" )
