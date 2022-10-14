@@ -245,6 +245,15 @@ hook.Add( "InitPostEntity", "fSpectate", fixAdminModIncompat )
 
 local lastChips = ""
 timer.Create( "fSpectateCheckChips", 0.5, 0, function()
+    local receivers = {}
+    for _, ply in ipairs( player.GetAll() ) do
+        if ply:GetInfoNum( "fspectate_e2s", 0 ) == 1 or ply:GetInfoNum( "fspectate_sfs", 0 ) == 1 then
+            table.insert( receivers, ply )
+        end
+    end
+
+    if #receivers == 0 then return end
+
     local e2ChipsTemp = ents.FindByClass( "gmod_wire_expression2" )
     local sfChipsTemp = ents.FindByClass( "starfall_processor" )
 
@@ -266,15 +275,6 @@ timer.Create( "fSpectateCheckChips", 0.5, 0, function()
 
     if lastChips == chipIds then return end
     lastChips = chipIds
-
-    local receivers = {}
-    for _, ply in ipairs( player.GetAll() ) do
-        if ply:GetInfoNum( "fspectate_e2s", 0 ) == 1 or ply:GetInfoNum( "fspectate_sfs", 0 ) == 1 then
-            table.insert( receivers, ply )
-        end
-    end
-
-    if #receivers == 0 then return end
 
     net.Start( "fSpectateChips" )
     net.WriteTable( e2Chips )
