@@ -6,6 +6,8 @@ local thirdperson = true
 local isRoaming = false
 local roamPos -- the position when roaming free
 local roamVelocity = Vector( 0 )
+local e2sToDraw = {}
+local sfsToDraw = {}
 
 -- Customizable vars
 local thirdPersonDistance = 100
@@ -540,25 +542,28 @@ local function drawHelp()
     draw_WordBox( 2, 10, scrHalfH + 80, "Use: Open the settings menu", "UiBold", uiBackground, uiForeground )
 
     if showE2s then
-        local e2s = ents.FindByClass( "gmod_wire_expression2" )
-        for _, e2 in ipairs( e2s ) do
-            local name = e2.name or "generic"
+        for e2, name in pairs( e2sToDraw ) do
+            if not IsValid( e2 ) then
+                e2sToDraw[e2] = nil
+                return
+            end
             local owner = e2:CPPIGetOwner()
+            local ownerName = owner:GetName() or "unknown"
             local pos = e2:GetPos():ToScreen()
 
-            draw_WordBox( 2, pos.x, pos.y, "E2: " .. name .. " (" .. owner:GetName() .. ")", "UiBold", uiBackground, uiForeground )
+            draw_WordBox( 2, pos.x, pos.y, "E2: " .. name .. " (" .. ownerName .. ")", "UiBold", uiBackground, uiForeground )
         end
     end
 
     if showSFs then
-        local sfs = ents.FindByClass( "starfall_processor" )
-        for _, sf in ipairs( sfs ) do
-            local name = sf.name
-            local owner = sf.owner
+        for sf, name in pairs( sfsToDraw ) do
+            if not IsValid( sf ) then
+                sfsToDraw[sf] = nil
+                return
+            end
+            local owner = sf:CPPIGetOwner()
             local ownerName = owner:GetName() or "unknown"
             local pos = sf:GetPos():ToScreen()
-
-            if name == "" then name = "Generic" end
 
             draw_WordBox( 2, pos.x, pos.y, "SF: " .. name .. " (" .. ownerName .. ")", "UiBold", uiBackground, uiForeground )
         end
@@ -733,6 +738,15 @@ stopSpectating = function()
     RunConsoleCommand( "fSpectate_StopSpectating" )
     isSpectating = false
 end
+
+--[[---------------------------------------------------------------------------
+Adds the fspectate console command and allows it to be used when the server is down.
+---------------------------------------------------------------------------]]
+
+net.Receive( "fSpectateChips", function()
+    e2sToDraw = net.ReadTable()
+    sfsToDraw = net.ReadTable()
+end )
 
 --[[---------------------------------------------------------------------------
 Adds the fspectate console command and allows it to be used when the server is down.
