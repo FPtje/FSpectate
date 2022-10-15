@@ -6,6 +6,8 @@ local thirdperson = true
 local isRoaming = false
 local roamPos -- the position when roaming free
 local roamVelocity = Vector( 0 )
+local e2sToDraw = {}
+local sfsToDraw = {}
 
 -- Customizable vars
 local thirdPersonDistance = 100
@@ -28,6 +30,28 @@ local materialOverride = render.MaterialOverride
 local cam_Start3D = cam.Start3D
 local cam_End3D = cam.End3D
 local draw_WordBox = draw.WordBox
+
+-- set up convars for customization
+local convarTable = {
+    aimlines = { default = 1, func = function( val ) showBeams = val end },
+    xray = { default = 0, func = function( val ) showChams = val end },
+    crosshair = { default = 1, func = function( val ) showCrosshair = val end },
+    playerinfo = { default = 1, func = function( val ) showPlayerInfo = val end },
+    names = { default = 1, func = function( val ) showNames = val end },
+    health = { default = 0, func = function( val ) showHealth = val end },
+    weapon = { default = 0, func = function( val ) showWeaponName = val end },
+    rank = { default = 0, func = function( val ) showRank = val end },
+    e2s = { default = 0, func = function( val ) showE2s = val end },
+    sfs = { default = 0, func = function( val ) showSFs = val end },
+}
+
+for convarname, tbl in pairs( convarTable ) do
+    local convarString = "fspectate_" .. convarname
+    CreateClientConVar( convarString, tbl.default and 1 or 0, true, true )
+    cvars.AddChangeCallback( convarString, function( _, _, new )
+        tbl.func( tobool( new ) )
+    end )
+end
 
 --[[-------------------------------------------------------------------------
 Retrieve the current spectated player
@@ -71,16 +95,16 @@ VGUI Options menu
 ---------------------------------------------------------------------------]]
 local settingsMenu
 
-local function addCheckbox( panel, text, valchanger, default )
+local function addCheckbox( panel, fancyText, convarname )
+    local convarString = "fspectate_" .. convarname
+    local convar = GetConVar( convarString )
     local checkBox = panel:Add( "DCheckBoxLabel" )
     checkBox:Dock( TOP )
+    checkBox:SetConVar( convarString )
     checkBox:DockMargin( 10, 0, 0, 5 )
-    checkBox:SetText( text )
-    checkBox:SetValue( default )
+    checkBox:SetText( fancyText )
+    checkBox:SetValue( convar:GetBool() )
     checkBox:SizeToContents()
-    function checkBox:OnChange( bool )
-        valchanger( bool )
-    end
 end
 
 local function addLabel( panel, text )
@@ -105,26 +129,26 @@ local function toggleSettingsMenu()
 
     addLabel( settingsMenu, "Functional:" )
 
-    addCheckbox( settingsMenu, "Enable aimlines", function( val ) showBeams = val end, showBeams )
-    addCheckbox( settingsMenu, "Enable X-Ray", function( val ) showChams = val end, showChams )
-    addCheckbox( settingsMenu, "Enable Crosshair", function( val ) showCrosshair = val end, showCrosshair )
+    addCheckbox( settingsMenu, "Enable aimlines", "aimlines" )
+    addCheckbox( settingsMenu, "Enable X-Ray", "xray" )
+    addCheckbox( settingsMenu, "Enable Crosshair", "crosshair" )
 
     addLabel( settingsMenu, "Player info:" )
 
-    addCheckbox( settingsMenu, "Enable player info", function( val ) showPlayerInfo = val end, showPlayerInfo )
-    addCheckbox( settingsMenu, "Show player names", function( val ) showNames = val end, showNames )
-    addCheckbox( settingsMenu, "Show player health", function( val ) showHealth = val end, showHealth )
-    addCheckbox( settingsMenu, "Show player current weapon", function( val ) showWeaponName = val end, showWeaponName )
-    addCheckbox( settingsMenu, "Show player rank", function( val ) showRank = val end, showRank )
+    addCheckbox( settingsMenu, "Enable player info", "playerinfo" )
+    addCheckbox( settingsMenu, "Show player names", "names" )
+    addCheckbox( settingsMenu, "Show player health", "health" )
+    addCheckbox( settingsMenu, "Show player current weapon", "weapon" )
+    addCheckbox( settingsMenu, "Show player rank", "rank" )
 
     addLabel( settingsMenu, "Miscellaneous:" )
 
     if WireLib then
-        addCheckbox( settingsMenu, "Show E2 chips", function( val ) showE2s = val end, showE2s )
+        addCheckbox( settingsMenu, "Show E2 chips", "e2s" )
     end
 
     if SF then
-        addCheckbox( settingsMenu, "Show SF rank", function( val ) showSFs = val end, showSFs )
+        addCheckbox( settingsMenu, "Show SF rank", "sfs" )
     end
 
     local distanceSlider = vgui.Create( "DNumSlider", settingsMenu )
@@ -514,29 +538,34 @@ local function drawHelp()
     draw_WordBox( 2, 10, scrHalfH, "Left click: (Un)select player to spectate", "UiBold", uiBackground, uiForeground )
     draw_WordBox( 2, 10, scrHalfH + 20, isRoaming and "Right click: quickly move forwards" or "Right click: toggle thirdperson", "UiBold", uiBackground, uiForeground )
     draw_WordBox( 2, 10, scrHalfH + 40, "Jump: Stop spectating", "UiBold", uiBackground, uiForeground )
-    draw_WordBox( 2, 10, scrHalfH + 60, "Use: Open the settings menu", "UiBold", uiBackground, uiForeground )
+    draw_WordBox( 2, 10, scrHalfH + 60, "Reload: Teleport to your current camera position.", "UiBold", uiBackground, uiForeground )
+    draw_WordBox( 2, 10, scrHalfH + 80, "Use: Open the settings menu", "UiBold", uiBackground, uiForeground )
 
     if showE2s then
-        local e2s = ents.FindByClass( "gmod_wire_expression2" )
-        for _, e2 in ipairs( e2s ) do
-            local name = e2.name or "generic"
+        for e2, name in pairs( e2sToDraw ) do
+            if not IsValid( e2 ) then
+                e2sToDraw[e2] = nil
+                return
+            end
             local owner = e2:CPPIGetOwner()
+            local ownerName = owner:GetName() or "unknown"
             local pos = e2:GetPos():ToScreen()
 
-            draw_WordBox( 2, pos.x, pos.y, "E2: " .. name .. " (" .. owner:GetName() .. ")", "UiBold", uiBackground, uiForeground )
+            draw_WordBox( 2, pos.x, pos.y, "E2: " .. name .. " (" .. ownerName .. ")", "UiBold", uiBackground, uiForeground )
         end
     end
 
     if showSFs then
-        local sfs = ents.FindByClass( "starfall_processor" )
-        for _, sf in ipairs( sfs ) do
-            local name = sf.name
-            local owner = sf.owner
+        for sf, name in pairs( sfsToDraw ) do
+            if not IsValid( sf ) then
+                sfsToDraw[sf] = nil
+                return
+            end
+            local owner = sf:CPPIGetOwner()
+            local ownerName = owner:GetName() or "unknown"
             local pos = sf:GetPos():ToScreen()
 
-            if name == "" then name = "Generic" end
-
-            draw_WordBox( 2, pos.x, pos.y, "SF: " .. name .. " (" .. owner:GetName() .. ")", "UiBold", uiBackground, uiForeground )
+            draw_WordBox( 2, pos.x, pos.y, "SF: " .. name .. " (" .. ownerName .. ")", "UiBold", uiBackground, uiForeground )
         end
     end
 
@@ -709,6 +738,15 @@ stopSpectating = function()
     RunConsoleCommand( "fSpectate_StopSpectating" )
     isSpectating = false
 end
+
+--[[---------------------------------------------------------------------------
+Adds the fspectate console command and allows it to be used when the server is down.
+---------------------------------------------------------------------------]]
+
+net.Receive( "fSpectateChips", function()
+    e2sToDraw = net.ReadTable()
+    sfsToDraw = net.ReadTable()
+end )
 
 --[[---------------------------------------------------------------------------
 Adds the fspectate console command and allows it to be used when the server is down.

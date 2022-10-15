@@ -1,6 +1,7 @@
 util.AddNetworkString( "fSpectate" )
 util.AddNetworkString( "fSpectateTarget" )
 util.AddNetworkString( "fSpectateName" )
+util.AddNetworkString( "fSpectateChips" )
 
 local function findPlayer( info )
     if not info or info == "" then return nil end
@@ -241,3 +242,42 @@ local function fixAdminModIncompat()
 end
 
 hook.Add( "InitPostEntity", "fSpectate", fixAdminModIncompat )
+
+local lastChips = ""
+timer.Create( "fSpectateCheckChips", 0.5, 0, function()
+    local receivers = {}
+    for _, ply in ipairs( player.GetAll() ) do
+        if ply:GetInfoNum( "fspectate_e2s", 0 ) == 1 or ply:GetInfoNum( "fspectate_sfs", 0 ) == 1 then
+            table.insert( receivers, ply )
+        end
+    end
+
+    if #receivers == 0 then return end
+
+    local e2ChipsTemp = ents.FindByClass( "gmod_wire_expression2" )
+    local sfChipsTemp = ents.FindByClass( "starfall_processor" )
+
+    if #e2ChipsTemp == 0 and #sfChipsTemp == 0 then return end
+
+    local e2Chips = {}
+    local sfChips = {}
+    local chipIds = 0
+
+    for _, chip in ipairs( e2ChipsTemp ) do
+        e2Chips[chip] = chip.name
+        chipIds = chipIds .. util.CRC( chip.name .. chip:EntIndex() )
+    end
+
+    for _, chip in ipairs( sfChipsTemp ) do
+        sfChips[chip] = chip.name
+        chipIds = chipIds .. util.CRC( chip.name .. chip:EntIndex() )
+    end
+
+    if lastChips == chipIds then return end
+    lastChips = chipIds
+
+    net.Start( "fSpectateChips" )
+    net.WriteTable( e2Chips )
+    net.WriteTable( sfChips )
+    net.Send( receivers )
+end )
