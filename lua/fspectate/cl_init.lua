@@ -4,7 +4,7 @@ local isSpectating = false
 local specEnt
 local thirdperson = true
 local isRoaming = false
-local roamPos -- the position when roaming free
+local roamPos = Vector() -- the position when roaming free
 local roamVelocity = Vector( 0 )
 local e2sToDraw = {}
 local sfsToDraw = {}
@@ -529,7 +529,6 @@ end
 Draw help on the screen
 ---------------------------------------------------------------------------]]
 local uiForeground, uiBackground = Color( 240, 240, 255, 255 ), Color( 20, 20, 20, 120 )
-local red = Color( 255, 0, 0, 255 )
 
 local function drawHelp()
     local scrHalfH = math.floor( ScrH() / 2 )
@@ -638,9 +637,7 @@ local function drawHelp()
     local center = target:LocalToWorld( target:OBBCenter() )
     local eyeAng = EyeAngles()
     local rightUp = eyeAng:Right() * 16 + eyeAng:Up() * 36
-    local topRight = ( center + rightUp ):ToScreen()
     local bottomLeft = ( center - rightUp ):ToScreen()
-    draw.RoundedBox( 12, bottomLeft.x, bottomLeft.y, math.max( 20, topRight.x - bottomLeft.x ), topRight.y - bottomLeft.y, red )
     draw_WordBox( 2, bottomLeft.x, bottomLeft.y + 12, "Left click to spectate!", "UiBold", uiBackground, uiForeground )
 end
 
