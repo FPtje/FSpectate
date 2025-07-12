@@ -328,7 +328,7 @@ end
 /*---------------------------------------------------------------------------
 Draw help on the screen
 ---------------------------------------------------------------------------*/
-local uiForeground, uiBackground = Color(240, 240, 255, 255), Color(20, 20, 20, 120)
+local uiForeground, uiBackground = Color(240, 240, 255, 255), Color(20, 20, 20, 150)
 local red = Color(255, 0, 0, 255)
 local function drawHelp()
     local scrHalfH = math.floor(ScrH() / 2)
@@ -365,14 +365,10 @@ local function drawHelp()
 
     if not IsValid(target) then return end
 
-    local center = target:LocalToWorld(target:OBBCenter())
-    local eyeAng = EyeAngles()
-    local rightUp = eyeAng:Right() * 16 + eyeAng:Up() * 36
-    local topRight = (center + rightUp):ToScreen()
-    local bottomLeft = (center - rightUp):ToScreen()
+    local center = target:LocalToWorld(target:OBBCenter()):ToScreen()
 
-    draw.RoundedBox(12, bottomLeft.x, bottomLeft.y, math.max(20, topRight.x - bottomLeft.x), topRight.y - bottomLeft.y, red)
-    draw.WordBox(2, bottomLeft.x, bottomLeft.y + 12, "Left click to spectate!", "UiBold", uiBackground, uiForeground)
+    draw.RoundedBox(4, center.x, center.y, 16, 16, red)
+    draw.WordBox(2, center.x + 16, center.y, "Left click to spectate!", "UiBold", uiBackground, uiForeground)
 end
 
 /*---------------------------------------------------------------------------
