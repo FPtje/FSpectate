@@ -1,11 +1,11 @@
 if not CAMI then return end
 
 CAMI.RegisterPrivilege{
-    Name = "FSpectate",
+    Name = "fSpectate",
     MinAccess = "admin"
 }
 
 CAMI.RegisterPrivilege{
-    Name = "FSpectateTeleport",
+    Name = "fSpectateTeleport",
     MinAccess = "admin"
 }
