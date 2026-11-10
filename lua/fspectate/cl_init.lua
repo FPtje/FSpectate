@@ -76,6 +76,15 @@ local function setSpecOwner()
 end
 
 --[[-------------------------------------------------------------------------
+Set the spec owner and checks for cppi
+---------------------------------------------------------------------------]]
+local function getChipOwner(ent)
+    if CPPI then return ent:CPPIGetOwner() end
+
+    return ent:GetOwner()
+end
+
+--[[-------------------------------------------------------------------------
 Finds a player entity by name
 ---------------------------------------------------------------------------]]
 local function findByPlayer( name )
@@ -516,10 +525,43 @@ Draw help on the screen
 ---------------------------------------------------------------------------]]
 local uiForeground, uiBackground = Color( 240, 240, 255, 255 ), Color( 20, 20, 20, 120 )
 
+local function drawStackedInfo( placedInfo, x, y, rows )
+    local width, height = 0, 0
+    local spacing = 2
+    surface.SetFont( "UiBold" )
+
+    for _, row in ipairs( rows ) do
+        local textWidth, textHeight = surface.GetTextSize( row.text )
+        row.height = textHeight + 4
+        width = math.max( width, textWidth + 4 )
+        height = height + row.height
+    end
+
+    local moved
+    repeat
+        moved = false
+        for _, box in ipairs( placedInfo ) do
+            if x < box.x + box.width and x + width > box.x
+                and y < box.y + box.height + spacing and y + height + spacing > box.y then
+                y = box.y - height - spacing
+                moved = true
+            end
+        end
+    until not moved
+
+    placedInfo[#placedInfo + 1] = { x = x, y = y, width = width, height = height }
+
+    for _, row in ipairs( rows ) do
+        draw_WordBox( 2, x, y, row.text, "UiBold", uiBackground, row.color )
+        y = y + row.height
+    end
+end
+
 local function drawHelp()
     local scrHalfH = math.floor( ScrH() / 2 )
     local target = findNearestObject()
     local pls = player.GetAll()
+    local placedInfo = {}
 
     draw_WordBox( 2, 10, scrHalfH, "Left click: (Un)select player to spectate", "UiBold", uiBackground, uiForeground )
     draw_WordBox( 2, 10, scrHalfH + 20, isRoaming and "Right click: quickly move forwards" or "Right click: toggle thirdperson", "UiBold", uiBackground, uiForeground )
@@ -533,11 +575,14 @@ local function drawHelp()
                 e2sToDraw[e2] = nil
                 return
             end
-            local owner = e2:CPPIGetOwner()
+            local owner = getChipOwner(e2)
             local ownerName = IsValid( owner ) and owner:GetName() or "world"
             local pos = e2:GetPos():ToScreen()
 
-            draw_WordBox( 2, pos.x, pos.y, "E2: " .. name .. " (" .. ownerName .. ")", "UiBold", uiBackground, uiForeground )
+            if not pos.visible then continue end
+            drawStackedInfo( placedInfo, pos.x, pos.y, {
+                { text = "E2: " .. name .. " (" .. ownerName .. ")", color = uiForeground }
+            } )
         end
     end
 
@@ -547,11 +592,14 @@ local function drawHelp()
                 sfsToDraw[sf] = nil
                 return
             end
-            local owner = sf:CPPIGetOwner()
+            local owner = getChipOwner(sf)
             local ownerName = IsValid( owner ) and owner:GetName() or "unknown"
             local pos = sf:GetPos():ToScreen()
 
-            draw_WordBox( 2, pos.x, pos.y, "SF: " .. name .. " (" .. ownerName .. ")", "UiBold", uiBackground, uiForeground )
+            if not pos.visible then continue end
+            drawStackedInfo( placedInfo, pos.x, pos.y, {
+                { text = "SF: " .. name .. " (" .. ownerName .. ")", color = uiForeground }
+            } )
         end
     end
 
@@ -590,31 +638,28 @@ local function drawHelp()
             if not isRoaming and ply == specEnt then continue end
             local pos = ply:GetShootPos():ToScreen()
             if not pos.visible then continue end
-            local x, y = pos.x, pos.y
-
-            local yAlign = y - 46
+            local rows = {}
 
             if showNames then
-                yAlign = yAlign + 20
-                draw_WordBox( 2, x, yAlign, ply:Nick(), "UiBold", uiBackground, team.GetColor( ply:Team() ) )
+                rows[#rows + 1] = { text = ply:Nick(), color = team.GetColor( ply:Team() ) }
             end
 
             if showHealth then
-                yAlign = yAlign + 20
                 local health = ply:Health()
                 local colorHealth = math.Clamp( health, 0, ply:GetMaxHealth() )
-                draw_WordBox( 2, x, yAlign, "Health: " .. health, "UiBold", uiBackground, HSVToColor( colorHealth, 1, 1 ) )
+                rows[#rows + 1] = { text = "Health: " .. health, color = HSVToColor( colorHealth, 1, 1 ) }
             end
 
             if showRank then
-                yAlign = yAlign + 20
-                draw_WordBox( 2, x, yAlign, ply:GetUserGroup(), "UiBold", uiBackground, uiForeground )
+                rows[#rows + 1] = { text = ply:GetUserGroup(), color = uiForeground }
             end
 
             if showWeaponName and isValid( ply:GetActiveWeapon() ) then
-                yAlign = yAlign + 20
-                draw_WordBox( 2, x, yAlign, ply:GetActiveWeapon():GetClass(), "UiBold", uiBackground, uiForeground )
+                rows[#rows + 1] = { text = ply:GetActiveWeapon():GetClass(), color = uiForeground }
             end
+
+            if #rows == 0 then continue end
+            drawStackedInfo( placedInfo, pos.x, pos.y - 26, rows )
         end
     end
 
